@@ -240,6 +240,100 @@ h2 {
   margin: 0;
 }
 
+.parallel-preview-panel {
+  border: 1px solid #d5dce7;
+  margin-bottom: 18px;
+  padding: 14px;
+}
+
+.parallel-preview-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.parallel-preview-header h3 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.parallel-preview-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.parallel-preview-controls button {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #c7d2e2;
+  color: #1557b0;
+  cursor: pointer;
+  display: flex;
+  font-size: 18px;
+  font-weight: 700;
+  height: 30px;
+  justify-content: center;
+  line-height: 1;
+  width: 30px;
+}
+
+.parallel-preview-controls button:disabled {
+  color: #9aa6b6;
+  cursor: not-allowed;
+}
+
+.parallel-preview-strip {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cabinet-preview {
+  background: #f8fafc;
+  border: 2px solid #30343b;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cabinet-preview-label {
+  background: #30343b;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 6px;
+}
+
+.cabinet-preview-body {
+  aspect-ratio: 0.62;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+}
+
+.cabinet-preview-layer {
+  border-bottom: 4px solid #2f2f2f;
+  display: grid;
+  gap: 4px;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  min-height: 0;
+}
+
+.cabinet-preview-layer:last-child {
+  border-bottom: 0;
+}
+
+.cabinet-preview-slot {
+  background: #f1f3f6;
+  border: 1px solid #d8dee8;
+  min-width: 0;
+}
+
 .calibration-card {
   border: 1px solid #d5dce7;
   margin-bottom: 18px;

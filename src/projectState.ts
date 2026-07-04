@@ -11,9 +11,35 @@ export type ProjectStateCabinetGroup = {
   id: string;
   status: CabinetGroupStatus;
   cabinetCount: number;
+  cabinets: Cabinet[];
   locked: boolean;
   position: CabinetGroupPosition;
   lastExportPath: string | null;
+};
+
+export type Cabinet = {
+  order: number;
+  structure: CabinetStructure;
+  slots: ProductSlot[];
+};
+
+export type CabinetStructure = {
+  layers: CabinetLayer[];
+  bottomBlankPercent: number;
+};
+
+export type CabinetLayer = {
+  heightPercent: number;
+  gapAfterPercent: number;
+  slotCount: number;
+};
+
+export type ProductSlot = {
+  layerIndex: number;
+  slotIndex: number;
+  imagePath: string | null;
+  name: string;
+  code: string;
 };
 
 export type ProjectState = {
@@ -47,6 +73,7 @@ export function createInitialProjectState(): ProjectState {
           id: group.id,
           status: group.status,
           cabinetCount: group.cabinetCount,
+          cabinets: createCabinets(group.cabinetCount),
           locked: false,
           position: group.position,
           lastExportPath: null,
@@ -54,6 +81,49 @@ export function createInitialProjectState(): ProjectState {
       ]),
     ),
   };
+}
+
+export function createCabinets(cabinetCount: number): Cabinet[] {
+  return Array.from({ length: clampInteger(cabinetCount, 1, 12) }, (_, index) => ({
+    order: index + 1,
+    structure: createDefaultCabinetStructure(),
+    slots: createProductSlots(createDefaultCabinetStructure()),
+  }));
+}
+
+function createDefaultCabinetStructure(): CabinetStructure {
+  return {
+    layers: [
+      {
+        heightPercent: 28,
+        gapAfterPercent: 2,
+        slotCount: 3,
+      },
+      {
+        heightPercent: 28,
+        gapAfterPercent: 2,
+        slotCount: 3,
+      },
+      {
+        heightPercent: 30,
+        gapAfterPercent: 0,
+        slotCount: 2,
+      },
+    ],
+    bottomBlankPercent: 10,
+  };
+}
+
+function createProductSlots(structure: CabinetStructure): ProductSlot[] {
+  return structure.layers.flatMap((layer, layerIndex) =>
+    Array.from({ length: layer.slotCount }, (_, slotIndex) => ({
+      layerIndex,
+      slotIndex,
+      imagePath: null,
+      name: "",
+      code: "",
+    })),
+  );
 }
 
 export function selectCabinetGroup(state: ProjectState, cabinetGroupId: string): ProjectState {
@@ -108,6 +178,7 @@ export function updateCabinetGroupCabinetCount(
       [cabinetGroupId]: {
         ...cabinetGroup,
         cabinetCount: clampInteger(cabinetCount, 1, 12),
+        cabinets: createCabinets(cabinetCount),
       },
     },
   };

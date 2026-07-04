@@ -22,12 +22,21 @@ type DragState = {
 export function App() {
   const { projectState, saveStatus, setProjectState } = useBrowserProjectState();
   const [isCalibrationMode, setIsCalibrationMode] = useState(false);
+  const [previewStartIndex, setPreviewStartIndex] = useState(0);
   const dragState = useRef<DragState | null>(null);
   const floorPlanCanvasRef = useRef<HTMLDivElement | null>(null);
   const selectedGroup = floorPlanConfig.cabinetGroups.find(
     (group) => group.id === projectState.selectedCabinetGroupId,
   );
   const selectedGroupState = selectedGroup ? projectState.cabinetGroups[selectedGroup.id] : null;
+  const previewCabinets = selectedGroupState?.cabinets.slice(
+    previewStartIndex,
+    previewStartIndex + 2,
+  );
+
+  useEffect(() => {
+    setPreviewStartIndex(0);
+  }, [projectState.selectedCabinetGroupId]);
 
   useEffect(() => {
     function moveActiveDrag(event: globalThis.PointerEvent) {
@@ -147,6 +156,20 @@ export function App() {
     );
   }
 
+  function showPreviousPreviewCabinets() {
+    setPreviewStartIndex((currentIndex) => Math.max(0, currentIndex - 1));
+  }
+
+  function showNextPreviewCabinets() {
+    if (!selectedGroupState) {
+      return;
+    }
+
+    setPreviewStartIndex((currentIndex) =>
+      Math.min(Math.max(0, selectedGroupState.cabinets.length - 2), currentIndex + 1),
+    );
+  }
+
   return (
     <main className="app-shell">
       <section className="floor-plan-panel" aria-labelledby="floor-plan-title">
@@ -236,6 +259,59 @@ export function App() {
                 <dd>{selectedGroupState.cabinetCount}</dd>
               </div>
             </dl>
+            <section className="parallel-preview-panel" aria-labelledby="parallel-preview-title">
+              <div className="parallel-preview-header">
+                <h3 id="parallel-preview-title">并联预览</h3>
+                <div className="parallel-preview-controls">
+                  <button
+                    aria-label="上一组货柜"
+                    disabled={previewStartIndex === 0}
+                    onClick={showPreviousPreviewCabinets}
+                    type="button"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    aria-label="下一组货柜"
+                    disabled={
+                      !selectedGroupState || previewStartIndex >= selectedGroupState.cabinets.length - 2
+                    }
+                    onClick={showNextPreviewCabinets}
+                    type="button"
+                  >
+                    ›
+                  </button>
+                </div>
+              </div>
+              <div className="parallel-preview-strip">
+                {previewCabinets?.map((cabinet) => (
+                  <article className="cabinet-preview" key={cabinet.order}>
+                    <span className="cabinet-preview-label">{`${selectedGroup.id}-${cabinet.order}`}</span>
+                    <div className="cabinet-preview-body">
+                      {cabinet.structure.layers.map((layer, layerIndex) => (
+                        <div
+                          className="cabinet-preview-layer"
+                          key={`${cabinet.order}-${layerIndex}`}
+                          style={{
+                            flexGrow: layer.heightPercent,
+                          }}
+                        >
+                          {Array.from({ length: layer.slotCount }, (_, slotIndex) => (
+                            <div
+                              aria-label={`${selectedGroup.id}-${cabinet.order} 第${
+                                layerIndex + 1
+                              }层第${slotIndex + 1}格`}
+                              className="cabinet-preview-slot"
+                              key={slotIndex}
+                            />
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
             {isCalibrationMode ? (
               <section className="calibration-card" aria-labelledby="calibration-title">
                 <div className="calibration-card-header">

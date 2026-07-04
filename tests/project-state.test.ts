@@ -7,6 +7,13 @@ import {
 } from "../src/projectState";
 
 describe("project state cabinet group calibration", () => {
+  test("creates cabinet instances for each cabinet group count", () => {
+    const state = createInitialProjectState();
+
+    expect(state.cabinetGroups.A00.cabinets).toHaveLength(3);
+    expect(state.cabinetGroups.A00.cabinets.map((cabinet) => cabinet.order)).toEqual([1, 2, 3]);
+  });
+
   test("updates cabinet group position and clamps it inside the floor plan", () => {
     const state = createInitialProjectState();
 

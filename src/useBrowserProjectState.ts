@@ -30,6 +30,11 @@ function mergeWithFallbackState(savedState: ProjectState): ProjectState {
         {
           ...fallbackCabinetGroup,
           ...savedState.cabinetGroups?.[id],
+          cabinets:
+            savedState.cabinetGroups?.[id]?.cabinets?.length ===
+            (savedState.cabinetGroups?.[id]?.cabinetCount ?? fallbackCabinetGroup.cabinetCount)
+              ? savedState.cabinetGroups[id].cabinets
+              : fallbackCabinetGroup.cabinets,
           position: {
             ...fallbackCabinetGroup.position,
             ...savedState.cabinetGroups?.[id]?.position,

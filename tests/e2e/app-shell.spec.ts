@@ -45,6 +45,32 @@ test("shows the fixed mall floor plan image and selected cabinet group details",
   await expect(page.locator(".cabinet-group-details dd").filter({ hasText: /^3$/ })).toBeVisible();
 });
 
+test("shows a two-cabinet parallel preview for the selected cabinet group", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "选择货柜组 A00" }).click();
+
+  await expect(page.getByRole("heading", { name: "并联预览" })).toBeVisible();
+  await expect(page.getByText("A00-1")).toBeVisible();
+  await expect(page.getByText("A00-2")).toBeVisible();
+  await expect(page.getByText("A00-3")).toBeHidden();
+  await expect(page.getByRole("button", { name: "上一组货柜" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "下一组货柜" })).toBeEnabled();
+});
+
+test("browses the selected cabinet group preview two cabinets at a time", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "选择货柜组 A00" }).click();
+  await page.getByRole("button", { name: "下一组货柜" }).click();
+
+  await expect(page.getByText("A00-1")).toBeHidden();
+  await expect(page.getByText("A00-2")).toBeVisible();
+  await expect(page.getByText("A00-3")).toBeVisible();
+  await expect(page.getByRole("button", { name: "下一组货柜" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "上一组货柜" })).toBeEnabled();
+});
+
 test("auto-saves and restores the selected cabinet group", async ({ page }) => {
   await page.goto("/");
 
