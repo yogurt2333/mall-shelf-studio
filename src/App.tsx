@@ -1,20 +1,9 @@
 import { useState } from "react";
-
-type CabinetGroup = {
-  id: string;
-  name: string;
-  markerClassName: string;
-};
-
-const cabinetGroups: CabinetGroup[] = [
-  { id: "A00", name: "中岛横向货柜组", markerClassName: "marker-a" },
-  { id: "B00", name: "中岛竖向货柜组", markerClassName: "marker-b" },
-  { id: "C00", name: "右侧横向货柜组", markerClassName: "marker-c" },
-];
+import { floorPlanConfig, getCabinetGroupStatusLabel } from "./floorPlanConfig";
 
 export function App() {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const selectedGroup = cabinetGroups.find((group) => group.id === selectedGroupId);
+  const selectedGroup = floorPlanConfig.cabinetGroups.find((group) => group.id === selectedGroupId);
 
   return (
     <main className="app-shell">
@@ -27,14 +16,25 @@ export function App() {
           <span className="status-pill">本地项目</span>
         </div>
 
-        <div className="floor-plan-placeholder" role="img" aria-label="固定商场平面图占位">
-          {cabinetGroups.map((group) => (
+        <div className="floor-plan-frame">
+          <img
+            alt={floorPlanConfig.imageAlt}
+            className="floor-plan-image"
+            src={floorPlanConfig.imagePath}
+          />
+          {floorPlanConfig.cabinetGroups.map((group) => (
             <button
               aria-label={`选择货柜组 ${group.id}`}
               aria-pressed={group.id === selectedGroupId}
-              className={`cabinet-group-marker ${group.markerClassName}`}
+              className="cabinet-group-marker"
               key={group.id}
               onClick={() => setSelectedGroupId(group.id)}
+              style={{
+                height: `${group.position.heightPercent}%`,
+                left: `${group.position.leftPercent}%`,
+                top: `${group.position.topPercent}%`,
+                width: `${group.position.widthPercent}%`,
+              }}
               type="button"
             >
               {group.id}
@@ -51,6 +51,16 @@ export function App() {
           <>
             <span className="selected-state">已选中货柜组</span>
             <h2>{`${selectedGroup.id} ${selectedGroup.name}`}</h2>
+            <dl className="cabinet-group-details">
+              <div>
+                <dt>状态</dt>
+                <dd>{getCabinetGroupStatusLabel(selectedGroup.status)}</dd>
+              </div>
+              <div>
+                <dt>货柜数量</dt>
+                <dd>{selectedGroup.cabinetCount}</dd>
+              </div>
+            </dl>
             <p>
               这里会显示两个货柜的并联预览，并提供编辑模板、编辑商品位和导出 PNG 的入口。
             </p>

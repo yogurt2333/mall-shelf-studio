@@ -20,3 +20,18 @@ test("focuses and selects a cabinet group from the fixed floor plan", async ({ p
   await expect(page.getByRole("heading", { name: "A00 中岛横向货柜组" })).toBeVisible();
   await expect(page.getByText("已选中货柜组")).toBeVisible();
 });
+
+test("shows the fixed mall floor plan image and selected cabinet group details", async ({ page }) => {
+  await page.goto("/");
+
+  const floorPlan = page.getByRole("img", { name: "固定商场平面图" });
+  await expect(floorPlan).toBeVisible();
+  await expect(floorPlan).toHaveJSProperty("naturalWidth", 910);
+
+  await page.getByRole("button", { name: "选择货柜组 A00" }).click();
+
+  await expect(page.getByText("状态")).toBeVisible();
+  await expect(page.getByText("未编辑")).toBeVisible();
+  await expect(page.getByText("货柜数量")).toBeVisible();
+  await expect(page.getByText("3")).toBeVisible();
+});

@@ -69,15 +69,20 @@ h2 {
   white-space: nowrap;
 }
 
-.floor-plan-placeholder {
-  aspect-ratio: 3 / 4;
-  background:
-    linear-gradient(90deg, rgba(33, 43, 58, 0.1) 1px, transparent 1px),
-    linear-gradient(rgba(33, 43, 58, 0.1) 1px, transparent 1px), #fbfcfd;
-  background-size: 48px 48px;
+.floor-plan-frame {
   border: 1px solid #c9d0dc;
-  min-height: 620px;
+  background: #fbfcfd;
+  display: inline-block;
+  max-height: calc(100vh - 112px);
+  max-width: 100%;
+  overflow: auto;
   position: relative;
+}
+
+.floor-plan-image {
+  display: block;
+  height: auto;
+  max-width: 100%;
 }
 
 .cabinet-group-marker {
@@ -107,27 +112,6 @@ h2 {
   box-shadow: 0 0 0 3px rgba(45, 115, 213, 0.18);
 }
 
-.marker-a {
-  height: 44px;
-  left: 22%;
-  top: 34%;
-  width: 170px;
-}
-
-.marker-b {
-  height: 150px;
-  left: 42%;
-  top: 50%;
-  width: 50px;
-}
-
-.marker-c {
-  height: 44px;
-  right: 16%;
-  top: 62%;
-  width: 150px;
-}
-
 .hint {
   color: #516075;
   font-size: 13px;
@@ -155,4 +139,30 @@ h2 {
   font-weight: 700;
   margin-bottom: 12px;
   padding: 6px 10px;
+}
+
+.cabinet-group-details {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0 0 18px;
+}
+
+.cabinet-group-details div {
+  border: 1px solid #d5dce7;
+  padding: 10px 12px;
+}
+
+.cabinet-group-details dt {
+  color: #516075;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.cabinet-group-details dd {
+  color: #18202f;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
 }
