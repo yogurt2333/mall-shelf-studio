@@ -24,9 +24,9 @@ export const floorPlanConfig = {
       status: "unedited",
       position: {
         leftPercent: 15.9,
-        topPercent: 39.1,
-        widthPercent: 30.9,
-        heightPercent: 4.8,
+        topPercent: 38.3,
+        widthPercent: 46.3,
+        heightPercent: 2.6,
       },
     },
     {
@@ -35,10 +35,10 @@ export const floorPlanConfig = {
       cabinetCount: 5,
       status: "unedited",
       position: {
-        leftPercent: 34.2,
-        topPercent: 44.2,
-        widthPercent: 7.5,
-        heightPercent: 22.3,
+        leftPercent: 34.3,
+        topPercent: 43.8,
+        widthPercent: 15.0,
+        heightPercent: 21.5,
       },
     },
     {
@@ -47,10 +47,10 @@ export const floorPlanConfig = {
       cabinetCount: 2,
       status: "unedited",
       position: {
-        leftPercent: 69.4,
-        topPercent: 68.5,
-        widthPercent: 18.2,
-        heightPercent: 4.9,
+        leftPercent: 69.6,
+        topPercent: 68.1,
+        widthPercent: 11.4,
+        heightPercent: 4.0,
       },
     },
   ] satisfies CabinetGroupConfig[],
