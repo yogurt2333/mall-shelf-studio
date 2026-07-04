@@ -10,6 +10,7 @@ test("opens into the Mall Shelf Studio fixed floor plan shell", async ({ page })
 
   await expect(page.getByRole("heading", { name: "Mall Shelf Studio" })).toBeVisible();
   await expect(page.getByText("固定商场平面图")).toBeVisible();
+  await expect(page.getByRole("button", { name: "校准货柜组" })).toBeVisible();
   await expect(page.getByText("选择一个货柜组开始编辑陈列")).toBeVisible();
 });
 
@@ -63,16 +64,20 @@ test("calibrates selected cabinet group cabinet count", async ({ page }) => {
   await page.goto("/");
 
   await page.getByRole("button", { name: "选择货柜组 A00" }).click();
-  await page.getByLabel("货柜数").fill("4");
+  await expect(page.getByRole("heading", { name: "A00 中岛横向货柜组" })).toBeVisible();
+  await expect(page.getByText("货柜组位置校准")).toBeHidden();
+  await page.getByRole("button", { name: "校准货柜组" }).click();
+  const cabinetCountInput = page.getByLabel("货柜数");
+  await cabinetCountInput.fill("4");
 
-  await expect(page.getByText("货柜数量")).toBeVisible();
-  await expect(page.locator(".cabinet-group-details dd").filter({ hasText: /^4$/ })).toBeVisible();
+  await expect(cabinetCountInput).toHaveValue("4");
 });
 
 test("drags a non-first cabinet group marker", async ({ page }) => {
   await page.goto("/");
 
   const marker = page.getByRole("button", { name: "选择货柜组 A01" });
+  await page.getByRole("button", { name: "校准货柜组" }).click();
   await marker.scrollIntoViewIfNeeded();
   const before = await marker.boundingBox();
   expect(before).not.toBeNull();

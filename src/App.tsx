@@ -1,4 +1,4 @@
-import { useEffect, useRef, type MouseEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import { floorPlanConfig, getCabinetGroupStatusLabel } from "./floorPlanConfig";
 import {
   selectCabinetGroup,
@@ -21,6 +21,7 @@ type DragState = {
 
 export function App() {
   const { projectState, saveStatus, setProjectState } = useBrowserProjectState();
+  const [isCalibrationMode, setIsCalibrationMode] = useState(false);
   const dragState = useRef<DragState | null>(null);
   const floorPlanCanvasRef = useRef<HTMLDivElement | null>(null);
   const selectedGroup = floorPlanConfig.cabinetGroups.find(
@@ -61,9 +62,10 @@ export function App() {
     groupId: string,
     mode: DragMode,
   ) {
-    startDragAt(event.clientX, event.clientY, groupId, mode);
-    event.preventDefault();
-    event.stopPropagation();
+    if (startDragAt(event.clientX, event.clientY, groupId, mode)) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
   }
 
   function startMouseDrag(
@@ -71,16 +73,21 @@ export function App() {
     groupId: string,
     mode: DragMode,
   ) {
-    startDragAt(event.clientX, event.clientY, groupId, mode);
-    event.preventDefault();
-    event.stopPropagation();
+    if (startDragAt(event.clientX, event.clientY, groupId, mode)) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
   }
 
   function startDragAt(clientX: number, clientY: number, groupId: string, mode: DragMode) {
+    if (!isCalibrationMode) {
+      return false;
+    }
+
     const cabinetGroup = projectState.cabinetGroups[groupId];
 
     if (!cabinetGroup || cabinetGroup.locked) {
-      return;
+      return false;
     }
 
     dragState.current = {
@@ -90,6 +97,8 @@ export function App() {
       startClientY: clientY,
       startPosition: cabinetGroup.position,
     };
+
+    return true;
   }
 
   function updateActiveDrag(clientX: number, clientY: number) {
@@ -147,6 +156,14 @@ export function App() {
             <h1 id="floor-plan-title">Mall Shelf Studio</h1>
           </div>
           <div className="toolbar-status">
+            <button
+              aria-pressed={isCalibrationMode}
+              className="toolbar-button"
+              onClick={() => setIsCalibrationMode((value) => !value)}
+              type="button"
+            >
+              校准货柜组
+            </button>
             <span className="status-pill">本地项目</span>
             <span className={`autosave autosave-${saveStatus}`}>
               自动保存：{saveStatus === "failed" ? "失败" : "已保存"}
@@ -172,7 +189,9 @@ export function App() {
                 <button
                   aria-label={`选择货柜组 ${group.id}`}
                   aria-pressed={group.id === projectState.selectedCabinetGroupId}
-                  className={`cabinet-group-marker ${groupState?.locked ? "is-locked" : ""}`}
+                  className={`cabinet-group-marker ${groupState?.locked ? "is-locked" : ""} ${
+                    isCalibrationMode ? "is-calibrating" : ""
+                  }`}
                   key={group.id}
                   onClick={() => setProjectState((state) => selectCabinetGroup(state, group.id))}
                   onMouseDown={(event) => startMouseDrag(event, group.id, "move")}
@@ -187,11 +206,11 @@ export function App() {
                 >
                   <span className="cabinet-group-label">{group.id}</span>
                   <span
-                  aria-hidden="true"
-                  className="cabinet-group-resize-handle"
-                  onMouseDown={(event) => startMouseDrag(event, group.id, "resize")}
-                  onPointerDown={(event) => startDrag(event, group.id, "resize")}
-                />
+                    aria-hidden="true"
+                    className="cabinet-group-resize-handle"
+                    onMouseDown={(event) => startMouseDrag(event, group.id, "resize")}
+                    onPointerDown={(event) => startDrag(event, group.id, "resize")}
+                  />
                 </button>
               );
             })}
@@ -217,96 +236,100 @@ export function App() {
                 <dd>{selectedGroupState.cabinetCount}</dd>
               </div>
             </dl>
-            <section className="calibration-card" aria-labelledby="calibration-title">
-              <div className="calibration-card-header">
-                <h3 id="calibration-title">货柜组位置校准</h3>
-                <label className="lock-toggle">
-                  <input
-                    checked={selectedGroupState.locked}
-                    onChange={(event) =>
-                      setProjectState((state) =>
-                        setCabinetGroupLocked(
-                          state,
-                          selectedGroupState.id,
-                          event.currentTarget.checked,
-                        ),
-                      )
-                    }
-                    type="checkbox"
-                  />
-                  锁定
-                </label>
-              </div>
-              <div className="calibration-grid">
-                <label>
-                  货柜数
-                  <input
-                    min="1"
-                    max="12"
-                    onChange={(event) =>
-                      setProjectState((state) =>
-                        updateCabinetGroupCabinetCount(
-                          state,
-                          selectedGroupState.id,
-                          Number(event.currentTarget.value),
-                        ),
-                      )
-                    }
-                    type="number"
-                    value={selectedGroupState.cabinetCount}
-                  />
-                </label>
-                <label>
-                  左
-                  <input
-                    disabled={selectedGroupState.locked}
-                    onChange={(event) =>
-                      updateSelectedPosition("leftPercent", Number(event.currentTarget.value))
-                    }
-                    step="0.1"
-                    type="number"
-                    value={selectedGroupState.position.leftPercent}
-                  />
-                </label>
-                <label>
-                  上
-                  <input
-                    disabled={selectedGroupState.locked}
-                    onChange={(event) =>
-                      updateSelectedPosition("topPercent", Number(event.currentTarget.value))
-                    }
-                    step="0.1"
-                    type="number"
-                    value={selectedGroupState.position.topPercent}
-                  />
-                </label>
-                <label>
-                  宽
-                  <input
-                    disabled={selectedGroupState.locked}
-                    onChange={(event) =>
-                      updateSelectedPosition("widthPercent", Number(event.currentTarget.value))
-                    }
-                    step="0.1"
-                    type="number"
-                    value={selectedGroupState.position.widthPercent}
-                  />
-                </label>
-                <label>
-                  高
-                  <input
-                    disabled={selectedGroupState.locked}
-                    onChange={(event) =>
-                      updateSelectedPosition("heightPercent", Number(event.currentTarget.value))
-                    }
-                    step="0.1"
-                    type="number"
-                    value={selectedGroupState.position.heightPercent}
-                  />
-                </label>
-              </div>
-              <p className="calibration-note">拖动蓝框调整位置，拖右下角调整大小。</p>
-            </section>
+            {isCalibrationMode ? (
+              <section className="calibration-card" aria-labelledby="calibration-title">
+                <div className="calibration-card-header">
+                  <h3 id="calibration-title">货柜组位置校准</h3>
+                  <label className="lock-toggle">
+                    <input
+                      checked={selectedGroupState.locked}
+                      onChange={(event) =>
+                        setProjectState((state) =>
+                          setCabinetGroupLocked(
+                            state,
+                            selectedGroupState.id,
+                            event.currentTarget.checked,
+                          ),
+                        )
+                      }
+                      type="checkbox"
+                    />
+                    锁定
+                  </label>
+                </div>
+                <div className="calibration-grid">
+                  <label htmlFor="cabinet-count-input">
+                    货柜数
+                    <input
+                      defaultValue={selectedGroupState.cabinetCount}
+                      id="cabinet-count-input"
+                      key={selectedGroupState.id}
+                      min="1"
+                      max="12"
+                      onBlur={(event) =>
+                        setProjectState((state) =>
+                          updateCabinetGroupCabinetCount(
+                            state,
+                            selectedGroupState.id,
+                            Number(event.currentTarget.value),
+                          ),
+                        )
+                      }
+                      type="number"
+                    />
+                  </label>
+                  <label>
+                    左
+                    <input
+                      disabled={selectedGroupState.locked}
+                      onChange={(event) =>
+                        updateSelectedPosition("leftPercent", Number(event.currentTarget.value))
+                      }
+                      step="0.1"
+                      type="number"
+                      value={selectedGroupState.position.leftPercent}
+                    />
+                  </label>
+                  <label>
+                    上
+                    <input
+                      disabled={selectedGroupState.locked}
+                      onChange={(event) =>
+                        updateSelectedPosition("topPercent", Number(event.currentTarget.value))
+                      }
+                      step="0.1"
+                      type="number"
+                      value={selectedGroupState.position.topPercent}
+                    />
+                  </label>
+                  <label>
+                    宽
+                    <input
+                      disabled={selectedGroupState.locked}
+                      onChange={(event) =>
+                        updateSelectedPosition("widthPercent", Number(event.currentTarget.value))
+                      }
+                      step="0.1"
+                      type="number"
+                      value={selectedGroupState.position.widthPercent}
+                    />
+                  </label>
+                  <label>
+                    高
+                    <input
+                      disabled={selectedGroupState.locked}
+                      onChange={(event) =>
+                        updateSelectedPosition("heightPercent", Number(event.currentTarget.value))
+                      }
+                      step="0.1"
+                      type="number"
+                      value={selectedGroupState.position.heightPercent}
+                    />
+                  </label>
+                </div>
+                <p className="calibration-note">拖动蓝框调整位置，拖右下角调整大小。</p>
+              </section>
+            ) : null}
             <p>这里会显示两个货柜的并联预览，并提供编辑模板、编辑商品位和导出 PNG 的入口。</p>
           </>
         ) : (

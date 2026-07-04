@@ -42,6 +42,21 @@ body {
   gap: 8px;
 }
 
+.toolbar-button {
+  background: #1557b0;
+  border: 1px solid #1557b0;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 12px;
+}
+
+.toolbar-button[aria-pressed="true"] {
+  background: #e8f2ff;
+  color: #1557b0;
+}
+
 .eyebrow {
   color: #516075;
   font-size: 13px;
@@ -111,7 +126,7 @@ h2 {
   background: rgba(74, 144, 226, 0.12);
   border: 2px solid #2d73d5;
   color: #1557b0;
-  cursor: move;
+  cursor: pointer;
   display: flex;
   font-size: 12px;
   font-weight: 700;
@@ -141,6 +156,10 @@ h2 {
   cursor: pointer;
 }
 
+.cabinet-group-marker.is-calibrating {
+  cursor: move;
+}
+
 .cabinet-group-label {
   pointer-events: none;
 }
@@ -153,7 +172,12 @@ h2 {
   height: 12px;
   position: absolute;
   right: -7px;
+  display: none;
   width: 12px;
+}
+
+.cabinet-group-marker.is-calibrating .cabinet-group-resize-handle {
+  display: block;
 }
 
 .cabinet-group-marker.is-locked .cabinet-group-resize-handle {
