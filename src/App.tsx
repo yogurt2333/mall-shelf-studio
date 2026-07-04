@@ -1,4 +1,4 @@
-import { useRef, type PointerEvent } from "react";
+import { useEffect, useRef, type MouseEvent, type PointerEvent } from "react";
 import { floorPlanConfig, getCabinetGroupStatusLabel } from "./floorPlanConfig";
 import {
   selectCabinetGroup,
@@ -22,51 +22,91 @@ type DragState = {
 export function App() {
   const { projectState, saveStatus, setProjectState } = useBrowserProjectState();
   const dragState = useRef<DragState | null>(null);
+  const floorPlanCanvasRef = useRef<HTMLDivElement | null>(null);
   const selectedGroup = floorPlanConfig.cabinetGroups.find(
     (group) => group.id === projectState.selectedCabinetGroupId,
   );
   const selectedGroupState = selectedGroup ? projectState.cabinetGroups[selectedGroup.id] : null;
+
+  useEffect(() => {
+    function moveActiveDrag(event: globalThis.PointerEvent) {
+      updateActiveDrag(event.clientX, event.clientY);
+    }
+
+    function moveActiveMouseDrag(event: globalThis.MouseEvent) {
+      updateActiveDrag(event.clientX, event.clientY);
+    }
+
+    function stopActiveDrag() {
+      dragState.current = null;
+    }
+
+    window.addEventListener("pointermove", moveActiveDrag);
+    window.addEventListener("pointerup", stopActiveDrag);
+    window.addEventListener("pointercancel", stopActiveDrag);
+    window.addEventListener("mousemove", moveActiveMouseDrag);
+    window.addEventListener("mouseup", stopActiveDrag);
+
+    return () => {
+      window.removeEventListener("pointermove", moveActiveDrag);
+      window.removeEventListener("pointerup", stopActiveDrag);
+      window.removeEventListener("pointercancel", stopActiveDrag);
+      window.removeEventListener("mousemove", moveActiveMouseDrag);
+      window.removeEventListener("mouseup", stopActiveDrag);
+    };
+  }, [setProjectState]);
 
   function startDrag(
     event: PointerEvent<HTMLButtonElement | HTMLSpanElement>,
     groupId: string,
     mode: DragMode,
   ) {
+    startDragAt(event.clientX, event.clientY, groupId, mode);
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function startMouseDrag(
+    event: MouseEvent<HTMLButtonElement | HTMLSpanElement>,
+    groupId: string,
+    mode: DragMode,
+  ) {
+    startDragAt(event.clientX, event.clientY, groupId, mode);
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function startDragAt(clientX: number, clientY: number, groupId: string, mode: DragMode) {
     const cabinetGroup = projectState.cabinetGroups[groupId];
 
     if (!cabinetGroup || cabinetGroup.locked) {
       return;
     }
 
-    event.preventDefault();
-    event.stopPropagation();
-    event.currentTarget.setPointerCapture(event.pointerId);
     dragState.current = {
       groupId,
       mode,
-      startClientX: event.clientX,
-      startClientY: event.clientY,
+      startClientX: clientX,
+      startClientY: clientY,
       startPosition: cabinetGroup.position,
     };
-    setProjectState((state) => selectCabinetGroup(state, groupId));
   }
 
-  function moveDrag(event: PointerEvent<HTMLElement>) {
+  function updateActiveDrag(clientX: number, clientY: number) {
     const activeDrag = dragState.current;
 
     if (!activeDrag) {
       return;
     }
 
-    const floorPlanCanvas = event.currentTarget.closest(".floor-plan-canvas");
-    const frameRect = floorPlanCanvas?.getBoundingClientRect();
+    const frameRect = floorPlanCanvasRef.current?.getBoundingClientRect();
 
     if (!frameRect) {
       return;
     }
 
-    const deltaXPercent = ((event.clientX - activeDrag.startClientX) / frameRect.width) * 100;
-    const deltaYPercent = ((event.clientY - activeDrag.startClientY) / frameRect.height) * 100;
+    const deltaXPercent = ((clientX - activeDrag.startClientX) / frameRect.width) * 100;
+    const deltaYPercent = ((clientY - activeDrag.startClientY) / frameRect.height) * 100;
     const nextPosition =
       activeDrag.mode === "move"
         ? {
@@ -83,10 +123,6 @@ export function App() {
     setProjectState((state) =>
       updateCabinetGroupPosition(state, activeDrag.groupId, nextPosition),
     );
-  }
-
-  function stopDrag() {
-    dragState.current = null;
   }
 
   function updateSelectedPosition(field: keyof CabinetGroupPosition, value: number) {
@@ -119,7 +155,10 @@ export function App() {
         </div>
 
         <div className="floor-plan-frame">
-          <div className="floor-plan-canvas">
+          <div
+            className="floor-plan-canvas"
+            ref={floorPlanCanvasRef}
+          >
             <img
               alt={floorPlanConfig.imageAlt}
               className="floor-plan-image"
@@ -136,10 +175,8 @@ export function App() {
                   className={`cabinet-group-marker ${groupState?.locked ? "is-locked" : ""}`}
                   key={group.id}
                   onClick={() => setProjectState((state) => selectCabinetGroup(state, group.id))}
-                  onPointerCancel={stopDrag}
+                  onMouseDown={(event) => startMouseDrag(event, group.id, "move")}
                   onPointerDown={(event) => startDrag(event, group.id, "move")}
-                  onPointerMove={moveDrag}
-                  onPointerUp={stopDrag}
                   style={{
                     height: `${position.heightPercent}%`,
                     left: `${position.leftPercent}%`,
@@ -150,12 +187,11 @@ export function App() {
                 >
                   <span className="cabinet-group-label">{group.id}</span>
                   <span
-                    aria-hidden="true"
-                    className="cabinet-group-resize-handle"
-                    onPointerDown={(event) => startDrag(event, group.id, "resize")}
-                    onPointerMove={moveDrag}
-                    onPointerUp={stopDrag}
-                  />
+                  aria-hidden="true"
+                  className="cabinet-group-resize-handle"
+                  onMouseDown={(event) => startMouseDrag(event, group.id, "resize")}
+                  onPointerDown={(event) => startDrag(event, group.id, "resize")}
+                />
                 </button>
               );
             })}

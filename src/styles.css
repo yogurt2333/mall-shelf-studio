@@ -120,6 +120,7 @@ h2 {
   position: absolute;
   touch-action: none;
   user-select: none;
+  z-index: 1;
 }
 
 .cabinet-group-marker:hover,
@@ -133,6 +134,7 @@ h2 {
   background: rgba(74, 144, 226, 0.28);
   border-color: #0f55c8;
   box-shadow: 0 0 0 3px rgba(45, 115, 213, 0.18);
+  z-index: 2;
 }
 
 .cabinet-group-marker.is-locked {
