@@ -58,8 +58,8 @@ export function App() {
       return;
     }
 
-    const floorPlanFrame = event.currentTarget.closest(".floor-plan-frame");
-    const frameRect = floorPlanFrame?.getBoundingClientRect();
+    const floorPlanCanvas = event.currentTarget.closest(".floor-plan-canvas");
+    const frameRect = floorPlanCanvas?.getBoundingClientRect();
 
     if (!frameRect) {
       return;
@@ -119,45 +119,47 @@ export function App() {
         </div>
 
         <div className="floor-plan-frame">
-          <img
-            alt={floorPlanConfig.imageAlt}
-            className="floor-plan-image"
-            src={floorPlanConfig.imagePath}
-          />
-          {floorPlanConfig.cabinetGroups.map((group) => {
-            const groupState = projectState.cabinetGroups[group.id];
-            const position = groupState?.position ?? group.position;
+          <div className="floor-plan-canvas">
+            <img
+              alt={floorPlanConfig.imageAlt}
+              className="floor-plan-image"
+              src={floorPlanConfig.imagePath}
+            />
+            {floorPlanConfig.cabinetGroups.map((group) => {
+              const groupState = projectState.cabinetGroups[group.id];
+              const position = groupState?.position ?? group.position;
 
-            return (
-              <button
-                aria-label={`选择货柜组 ${group.id}`}
-                aria-pressed={group.id === projectState.selectedCabinetGroupId}
-                className={`cabinet-group-marker ${groupState?.locked ? "is-locked" : ""}`}
-                key={group.id}
-                onClick={() => setProjectState((state) => selectCabinetGroup(state, group.id))}
-                onPointerCancel={stopDrag}
-                onPointerDown={(event) => startDrag(event, group.id, "move")}
-                onPointerMove={moveDrag}
-                onPointerUp={stopDrag}
-                style={{
-                  height: `${position.heightPercent}%`,
-                  left: `${position.leftPercent}%`,
-                  top: `${position.topPercent}%`,
-                  width: `${position.widthPercent}%`,
-                }}
-                type="button"
-              >
-                <span className="cabinet-group-label">{group.id}</span>
-                <span
-                  aria-hidden="true"
-                  className="cabinet-group-resize-handle"
-                  onPointerDown={(event) => startDrag(event, group.id, "resize")}
+              return (
+                <button
+                  aria-label={`选择货柜组 ${group.id}`}
+                  aria-pressed={group.id === projectState.selectedCabinetGroupId}
+                  className={`cabinet-group-marker ${groupState?.locked ? "is-locked" : ""}`}
+                  key={group.id}
+                  onClick={() => setProjectState((state) => selectCabinetGroup(state, group.id))}
+                  onPointerCancel={stopDrag}
+                  onPointerDown={(event) => startDrag(event, group.id, "move")}
                   onPointerMove={moveDrag}
                   onPointerUp={stopDrag}
-                />
-              </button>
-            );
-          })}
+                  style={{
+                    height: `${position.heightPercent}%`,
+                    left: `${position.leftPercent}%`,
+                    top: `${position.topPercent}%`,
+                    width: `${position.widthPercent}%`,
+                  }}
+                  type="button"
+                >
+                  <span className="cabinet-group-label">{group.id}</span>
+                  <span
+                    aria-hidden="true"
+                    className="cabinet-group-resize-handle"
+                    onPointerDown={(event) => startDrag(event, group.id, "resize")}
+                    onPointerMove={moveDrag}
+                    onPointerUp={stopDrag}
+                  />
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <p className="hint">蓝色框是货柜组编号，仅作为提示用；未聚焦时隐藏。</p>

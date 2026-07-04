@@ -89,17 +89,21 @@ h2 {
 .floor-plan-frame {
   border: 1px solid #c9d0dc;
   background: #fbfcfd;
-  display: inline-block;
   max-height: calc(100vh - 112px);
   max-width: 100%;
   overflow: auto;
+}
+
+.floor-plan-canvas {
+  height: 1254px;
   position: relative;
+  width: 910px;
 }
 
 .floor-plan-image {
   display: block;
-  height: auto;
-  max-width: 100%;
+  height: 1254px;
+  width: 910px;
 }
 
 .cabinet-group-marker {
