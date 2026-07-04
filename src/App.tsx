@@ -3,8 +3,11 @@ import { floorPlanConfig, getCabinetGroupStatusLabel } from "./floorPlanConfig";
 import {
   selectCabinetGroup,
   setCabinetGroupLocked,
+  updateCabinetStructure,
   updateCabinetGroupCabinetCount,
   updateCabinetGroupPosition,
+  validateCabinetStructure,
+  type CabinetStructure,
   type CabinetGroupPosition,
 } from "./projectState";
 import { useBrowserProjectState } from "./useBrowserProjectState";
@@ -23,6 +26,8 @@ export function App() {
   const { projectState, saveStatus, setProjectState } = useBrowserProjectState();
   const [isCalibrationMode, setIsCalibrationMode] = useState(false);
   const [previewStartIndex, setPreviewStartIndex] = useState(0);
+  const [activeView, setActiveView] = useState<"main" | "templateEditor">("main");
+  const [editingCabinetIndex, setEditingCabinetIndex] = useState(0);
   const dragState = useRef<DragState | null>(null);
   const floorPlanCanvasRef = useRef<HTMLDivElement | null>(null);
   const selectedGroup = floorPlanConfig.cabinetGroups.find(
@@ -33,9 +38,15 @@ export function App() {
     previewStartIndex,
     previewStartIndex + 2,
   );
+  const editingCabinet = selectedGroupState?.cabinets[editingCabinetIndex];
+  const editingValidation = editingCabinet
+    ? validateCabinetStructure(editingCabinet.structure)
+    : null;
 
   useEffect(() => {
     setPreviewStartIndex(0);
+    setEditingCabinetIndex(0);
+    setActiveView("main");
   }, [projectState.selectedCabinetGroupId]);
 
   useEffect(() => {
@@ -170,6 +181,56 @@ export function App() {
     );
   }
 
+  function updateEditingCabinetStructure(structure: CabinetStructure) {
+    if (!selectedGroupState || !editingCabinet) {
+      return;
+    }
+
+    setProjectState((state) =>
+      updateCabinetStructure(state, selectedGroupState.id, editingCabinet.order, structure),
+    );
+  }
+
+  function updateEditingLayer(
+    layerIndex: number,
+    field: "heightPercent" | "gapAfterPercent" | "slotCount",
+    value: number,
+  ) {
+    if (!editingCabinet) {
+      return;
+    }
+
+    updateEditingCabinetStructure({
+      ...editingCabinet.structure,
+      layers: editingCabinet.structure.layers.map((layer, index) =>
+        index === layerIndex
+          ? {
+              ...layer,
+              [field]: value,
+            }
+          : layer,
+      ),
+    });
+  }
+
+  function updateEditingLayerCount(layerCount: number) {
+    if (!editingCabinet) {
+      return;
+    }
+
+    const nextLayerCount = Math.min(8, Math.max(1, Math.round(layerCount)));
+    const layers = [...editingCabinet.structure.layers];
+
+    while (layers.length < nextLayerCount) {
+      layers.push({ heightPercent: 20, gapAfterPercent: 0, slotCount: 3 });
+    }
+
+    updateEditingCabinetStructure({
+      ...editingCabinet.structure,
+      layers: layers.slice(0, nextLayerCount),
+    });
+  }
+
   return (
     <main className="app-shell">
       <section className="floor-plan-panel" aria-labelledby="floor-plan-title">
@@ -245,7 +306,126 @@ export function App() {
 
       <aside className="selection-panel">
         <p className="eyebrow">货柜组</p>
-        {selectedGroup && selectedGroupState ? (
+        {selectedGroup && selectedGroupState && activeView === "templateEditor" && editingCabinet ? (
+          <>
+            <button className="text-button" onClick={() => setActiveView("main")} type="button">
+              返回主页
+            </button>
+            <h2>编辑货柜模板</h2>
+            <div className="template-editor-header">
+              <button
+                aria-label="上一货柜"
+                disabled={editingCabinetIndex === 0}
+                onClick={() => setEditingCabinetIndex((index) => Math.max(0, index - 1))}
+                type="button"
+              >
+                ‹
+              </button>
+              <strong>{`${selectedGroup.id}-${editingCabinet.order}`}</strong>
+              <button
+                aria-label="下一货柜"
+                disabled={editingCabinetIndex >= selectedGroupState.cabinets.length - 1}
+                onClick={() =>
+                  setEditingCabinetIndex((index) =>
+                    Math.min(selectedGroupState.cabinets.length - 1, index + 1),
+                  )
+                }
+                type="button"
+              >
+                ›
+              </button>
+            </div>
+            <div className="template-editor-layout">
+              <article className="cabinet-preview template-cabinet-preview">
+                <span className="cabinet-preview-label">{`${selectedGroup.id}-${editingCabinet.order}`}</span>
+                <div className="cabinet-preview-body">
+                  {editingCabinet.structure.layers.map((layer, layerIndex) => (
+                    <div
+                      className="cabinet-preview-layer"
+                      key={layerIndex}
+                      style={{ flexGrow: layer.heightPercent }}
+                    >
+                      {Array.from({ length: layer.slotCount }, (_, slotIndex) => (
+                        <div className="cabinet-preview-slot" key={slotIndex} />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </article>
+              <section className="structure-editor" aria-label="货柜结构设置">
+                <label>
+                  层数
+                  <input
+                    max="8"
+                    min="1"
+                    onChange={(event) => updateEditingLayerCount(Number(event.currentTarget.value))}
+                    type="number"
+                    value={editingCabinet.structure.layers.length}
+                  />
+                </label>
+                {editingCabinet.structure.layers.map((layer, layerIndex) => (
+                  <div className="layer-editor-row" key={layerIndex}>
+                    <label>
+                      第 {layerIndex + 1} 层层高
+                      <input
+                        aria-label={`第 ${layerIndex + 1} 层层高`}
+                        onChange={(event) =>
+                          updateEditingLayer(
+                            layerIndex,
+                            "heightPercent",
+                            Number(event.currentTarget.value),
+                          )
+                        }
+                        type="number"
+                        value={layer.heightPercent}
+                      />
+                    </label>
+                    <label>
+                      第 {layerIndex + 1} 层间距
+                      <input
+                        aria-label={`第 ${layerIndex + 1} 层间距`}
+                        onChange={(event) =>
+                          updateEditingLayer(
+                            layerIndex,
+                            "gapAfterPercent",
+                            Number(event.currentTarget.value),
+                          )
+                        }
+                        type="number"
+                        value={layer.gapAfterPercent}
+                      />
+                    </label>
+                    <label>
+                      第 {layerIndex + 1} 层格子
+                      <input
+                        aria-label={`第 ${layerIndex + 1} 层格子`}
+                        min="1"
+                        onChange={(event) =>
+                          updateEditingLayer(layerIndex, "slotCount", Number(event.currentTarget.value))
+                        }
+                        type="number"
+                        value={layer.slotCount}
+                      />
+                    </label>
+                  </div>
+                ))}
+                <p className={editingValidation?.isValid ? "validation-ok" : "validation-error"}>
+                  {editingValidation?.isValid
+                    ? `剩余底部留白 ${editingValidation.bottomBlankPercent}%`
+                    : editingValidation?.message}
+                </p>
+                <div className="template-actions">
+                  <button disabled={!editingValidation?.isValid} type="button">
+                    保存此模板
+                  </button>
+                  <button disabled={!editingValidation?.isValid} type="button">
+                    应用模板
+                  </button>
+                </div>
+              </section>
+            </div>
+          </>
+        ) : selectedGroup && selectedGroupState ? (
           <>
             <span className="selected-state">已选中货柜组</span>
             <h2>{`${selectedGroup.id} ${selectedGroup.name}`}</h2>
@@ -312,6 +492,14 @@ export function App() {
                 ))}
               </div>
             </section>
+            <div className="selection-actions">
+              <button onClick={() => setActiveView("templateEditor")} type="button">
+                编辑模板
+              </button>
+              <button type="button">编辑商品位</button>
+              <button type="button">显示全量并联图</button>
+              <button type="button">保存并联图</button>
+            </div>
             {isCalibrationMode ? (
               <section className="calibration-card" aria-labelledby="calibration-title">
                 <div className="calibration-card-header">
@@ -406,7 +594,6 @@ export function App() {
                 <p className="calibration-note">拖动蓝框调整位置，拖右下角调整大小。</p>
               </section>
             ) : null}
-            <p>这里会显示两个货柜的并联预览，并提供编辑模板、编辑商品位和导出 PNG 的入口。</p>
           </>
         ) : (
           <>

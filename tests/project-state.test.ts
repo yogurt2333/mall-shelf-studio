@@ -2,8 +2,10 @@ import { describe, expect, test } from "vitest";
 import {
   createInitialProjectState,
   setCabinetGroupLocked,
+  updateCabinetStructure,
   updateCabinetGroupCabinetCount,
   updateCabinetGroupPosition,
+  validateCabinetStructure,
 } from "../src/projectState";
 
 describe("project state cabinet group calibration", () => {
@@ -51,5 +53,40 @@ describe("project state cabinet group calibration", () => {
     const updatedState = updateCabinetGroupCabinetCount(state, "A00", 4.6);
 
     expect(updatedState.cabinetGroups.A00.cabinetCount).toBe(5);
+  });
+});
+
+describe("project state cabinet structure editing", () => {
+  test("updates only the selected cabinet structure", () => {
+    const state = createInitialProjectState();
+
+    const updatedState = updateCabinetStructure(state, "A00", 1, {
+      layers: [
+        { heightPercent: 40, gapAfterPercent: 5, slotCount: 2 },
+        { heightPercent: 30, gapAfterPercent: 0, slotCount: 4 },
+      ],
+      bottomBlankPercent: 25,
+    });
+
+    expect(updatedState.cabinetGroups.A00.cabinets[0].structure.layers).toHaveLength(2);
+    expect(updatedState.cabinetGroups.A00.cabinets[0].slots).toHaveLength(6);
+    expect(updatedState.cabinetGroups.A00.cabinets[1].structure.layers).toHaveLength(3);
+  });
+
+  test("validates cabinet layer height and spacing budget", () => {
+    expect(
+      validateCabinetStructure({
+        layers: [
+          { heightPercent: 60, gapAfterPercent: 10, slotCount: 2 },
+          { heightPercent: 40, gapAfterPercent: 0, slotCount: 2 },
+        ],
+        bottomBlankPercent: 0,
+      }),
+    ).toEqual({
+      isValid: false,
+      usedPercent: 110,
+      bottomBlankPercent: 0,
+      message: "层高和层间距总和不能超过 100%",
+    });
   });
 });

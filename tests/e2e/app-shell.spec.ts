@@ -71,6 +71,40 @@ test("browses the selected cabinet group preview two cabinets at a time", async 
   await expect(page.getByRole("button", { name: "上一组货柜" })).toBeEnabled();
 });
 
+test("opens single-cabinet template editing and validates layer budget", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "选择货柜组 A00" }).click();
+  await page.getByRole("button", { name: "编辑模板" }).click();
+
+  await expect(page.getByRole("heading", { name: "编辑货柜模板" })).toBeVisible();
+  await expect(page.locator(".template-editor-header strong")).toHaveText("A00-1");
+
+  await page.getByRole("button", { name: "下一货柜" }).click();
+  await expect(page.locator(".template-editor-header strong")).toHaveText("A00-2");
+
+  await page.getByLabel("第 1 层层高").fill("80");
+  await page.getByLabel("第 2 层层高").fill("30");
+
+  await expect(page.getByText("层高和层间距总和不能超过 100%")).toBeVisible();
+  await expect(page.getByRole("button", { name: "保存此模板" })).toBeDisabled();
+});
+
+test("template editing changes only the current cabinet", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "选择货柜组 A00" }).click();
+  await page.getByRole("button", { name: "编辑模板" }).click();
+  await page.getByRole("button", { name: "下一货柜" }).click();
+  await page.getByLabel("第 1 层层高").fill("45");
+  await expect(page.getByLabel("第 1 层层高")).toHaveValue("45");
+
+  await page.getByRole("button", { name: "上一货柜" }).click();
+
+  await expect(page.locator(".template-editor-header strong")).toHaveText("A00-1");
+  await expect(page.getByLabel("第 1 层层高")).toHaveValue("28");
+});
+
 test("auto-saves and restores the selected cabinet group", async ({ page }) => {
   await page.goto("/");
 

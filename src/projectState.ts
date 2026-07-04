@@ -42,6 +42,13 @@ export type ProductSlot = {
   code: string;
 };
 
+export type CabinetStructureValidation = {
+  isValid: boolean;
+  usedPercent: number;
+  bottomBlankPercent: number;
+  message: string | null;
+};
+
 export type ProjectState = {
   floorPlan: {
     imagePath: string;
@@ -134,6 +141,65 @@ export function selectCabinetGroup(state: ProjectState, cabinetGroupId: string):
   return {
     ...state,
     selectedCabinetGroupId: cabinetGroupId,
+  };
+}
+
+export function updateCabinetStructure(
+  state: ProjectState,
+  cabinetGroupId: string,
+  cabinetOrder: number,
+  structure: CabinetStructure,
+): ProjectState {
+  const cabinetGroup = state.cabinetGroups[cabinetGroupId];
+
+  if (!cabinetGroup) {
+    return state;
+  }
+
+  return {
+    ...state,
+    cabinetGroups: {
+      ...state.cabinetGroups,
+      [cabinetGroupId]: {
+        ...cabinetGroup,
+        status: "inProgress",
+        cabinets: cabinetGroup.cabinets.map((cabinet) =>
+          cabinet.order === cabinetOrder
+            ? {
+                ...cabinet,
+                structure,
+                slots: createProductSlots(structure),
+              }
+            : cabinet,
+        ),
+      },
+    },
+  };
+}
+
+export function validateCabinetStructure(
+  structure: CabinetStructure,
+): CabinetStructureValidation {
+  const usedPercent = structure.layers.reduce(
+    (total, layer) => total + layer.heightPercent + layer.gapAfterPercent,
+    0,
+  );
+  const bottomBlankPercent = Math.max(0, 100 - usedPercent);
+
+  if (usedPercent > 100) {
+    return {
+      isValid: false,
+      usedPercent,
+      bottomBlankPercent,
+      message: "层高和层间距总和不能超过 100%",
+    };
+  }
+
+  return {
+    isValid: true,
+    usedPercent,
+    bottomBlankPercent,
+    message: null,
   };
 }
 
