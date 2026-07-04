@@ -55,3 +55,13 @@ test("auto-saves and restores the selected cabinet group", async ({ page }) => {
     "true",
   );
 });
+
+test("calibrates selected cabinet group cabinet count", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "选择货柜组 A00" }).click();
+  await page.getByLabel("货柜数").fill("4");
+
+  await expect(page.getByText("货柜数量")).toBeVisible();
+  await expect(page.getByText("4")).toBeVisible();
+});

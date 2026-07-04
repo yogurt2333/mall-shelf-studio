@@ -107,13 +107,15 @@ h2 {
   background: rgba(74, 144, 226, 0.12);
   border: 2px solid #2d73d5;
   color: #1557b0;
-  cursor: pointer;
+  cursor: move;
   display: flex;
   font-size: 12px;
   font-weight: 700;
   justify-content: center;
   padding: 0;
   position: absolute;
+  touch-action: none;
+  user-select: none;
 }
 
 .cabinet-group-marker:hover,
@@ -127,6 +129,30 @@ h2 {
   background: rgba(74, 144, 226, 0.28);
   border-color: #0f55c8;
   box-shadow: 0 0 0 3px rgba(45, 115, 213, 0.18);
+}
+
+.cabinet-group-marker.is-locked {
+  cursor: pointer;
+}
+
+.cabinet-group-label {
+  pointer-events: none;
+}
+
+.cabinet-group-resize-handle {
+  background: #0f55c8;
+  border: 2px solid #ffffff;
+  bottom: -7px;
+  cursor: nwse-resize;
+  height: 12px;
+  position: absolute;
+  right: -7px;
+  width: 12px;
+}
+
+.cabinet-group-marker.is-locked .cabinet-group-resize-handle {
+  background: #7b8797;
+  cursor: not-allowed;
 }
 
 .hint {
@@ -182,4 +208,67 @@ h2 {
   font-size: 16px;
   font-weight: 700;
   margin: 0;
+}
+
+.calibration-card {
+  border: 1px solid #d5dce7;
+  margin-bottom: 18px;
+  padding: 14px;
+}
+
+.calibration-card-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.calibration-card h3 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.lock-toggle {
+  align-items: center;
+  color: #31527c;
+  display: flex;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 6px;
+}
+
+.calibration-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.calibration-grid label {
+  color: #516075;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 4px;
+}
+
+.calibration-grid input {
+  border: 1px solid #c7d2e2;
+  color: #18202f;
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 9px;
+  width: 100%;
+}
+
+.calibration-grid input:disabled {
+  background: #eef2f6;
+  color: #7b8797;
+}
+
+.calibration-note {
+  color: #516075;
+  font-size: 13px;
+  margin: 12px 0 0;
 }

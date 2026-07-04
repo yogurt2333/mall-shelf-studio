@@ -8,10 +8,36 @@ function loadBrowserProjectState(): ProjectState {
 
   try {
     const savedState = window.localStorage.getItem(projectStateStorageKey);
-    return savedState ? (JSON.parse(savedState) as ProjectState) : fallbackState;
+    return savedState ? mergeWithFallbackState(JSON.parse(savedState) as ProjectState) : fallbackState;
   } catch {
     return fallbackState;
   }
+}
+
+function mergeWithFallbackState(savedState: ProjectState): ProjectState {
+  const fallbackState = createInitialProjectState();
+
+  return {
+    ...fallbackState,
+    ...savedState,
+    floorPlan: {
+      ...fallbackState.floorPlan,
+      ...savedState.floorPlan,
+    },
+    cabinetGroups: Object.fromEntries(
+      Object.entries(fallbackState.cabinetGroups).map(([id, fallbackCabinetGroup]) => [
+        id,
+        {
+          ...fallbackCabinetGroup,
+          ...savedState.cabinetGroups?.[id],
+          position: {
+            ...fallbackCabinetGroup.position,
+            ...savedState.cabinetGroups?.[id]?.position,
+          },
+        },
+      ]),
+    ),
+  };
 }
 
 export function useBrowserProjectState() {
