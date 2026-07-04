@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+out/
+
+# Local app data
+data/*.local.json
+
+# Generated exports and uploaded product images
+exports/*
+assets/products/*
+
+# Keep directory placeholders
+!exports/.gitkeep
+!assets/products/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
