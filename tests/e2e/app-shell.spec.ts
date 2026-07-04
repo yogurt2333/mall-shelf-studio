@@ -1,5 +1,10 @@
 import { expect, test } from "@playwright/test";
 
+test.beforeEach(async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+});
+
 test("opens into the Mall Shelf Studio fixed floor plan shell", async ({ page }) => {
   await page.goto("/");
 
@@ -34,4 +39,19 @@ test("shows the fixed mall floor plan image and selected cabinet group details",
   await expect(page.getByText("未编辑")).toBeVisible();
   await expect(page.getByText("货柜数量")).toBeVisible();
   await expect(page.getByText("3")).toBeVisible();
+});
+
+test("auto-saves and restores the selected cabinet group", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "选择货柜组 A00" }).click();
+  await expect(page.getByText("自动保存：已保存")).toBeVisible();
+
+  await page.reload();
+
+  await expect(page.getByRole("heading", { name: "A00 中岛横向货柜组" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "选择货柜组 A00" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
 });

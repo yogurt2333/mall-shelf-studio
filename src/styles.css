@@ -35,6 +35,13 @@ body {
   margin-bottom: 18px;
 }
 
+.toolbar-status {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .eyebrow {
   color: #516075;
   font-size: 13px;
@@ -67,6 +74,16 @@ h2 {
   font-size: 13px;
   padding: 6px 10px;
   white-space: nowrap;
+}
+
+.autosave {
+  color: #516075;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.autosave-failed {
+  color: #b42318;
 }
 
 .floor-plan-frame {
