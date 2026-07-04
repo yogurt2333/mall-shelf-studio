@@ -297,8 +297,14 @@ Users do not add or delete cabinet groups or cabinets in MVP.
 
 ## Open Questions For Implementation
 
-- Exact desktop framework: Electron, Tauri, or another local runtime.
 - Exact JSON file location and project folder structure.
 - Exact PNG rendering implementation: DOM screenshot, canvas, or headless renderer.
 - Image file type constraints and maximum file size.
 - Whether to keep generated PNGs in `exports/` and product images in `assets/products/`.
+
+## Implementation Baseline
+
+- Desktop runtime: Electron.
+- Frontend: React, TypeScript, and Vite.
+- Unit tests: Vitest.
+- App shell tests: Playwright.

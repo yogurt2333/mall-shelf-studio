@@ -6,7 +6,7 @@ It opens into a fixed mall floor plan, lets the user select a cabinet group, edi
 
 ## Current Status
 
-This repository is at the product-spec and project-structure stage. The next step is implementation.
+This repository has the initial Electron + React + TypeScript scaffold in place. The next step is building the mall floor plan and cabinet group workflow.
 
 ## MVP
 
@@ -59,12 +59,26 @@ Out of scope for MVP:
 
 ## Development Notes
 
+Current stack:
+
+- Desktop runtime: Electron.
+- Frontend: React, TypeScript, and Vite.
+- Unit tests: Vitest.
+- App shell tests: Playwright.
+
 Open implementation decisions:
 
-- Desktop runtime: Electron, Tauri, or another local runtime.
 - PNG rendering method: DOM screenshot, canvas, or headless renderer.
 - Final JSON file layout and migration strategy.
 - Supported image file types and size limits.
+
+Useful commands:
+
+```bash
+npm run dev
+npm run desktop
+npm run check
+```
 
 ## License
 

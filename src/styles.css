@@ -1,0 +1,131 @@
+:root {
+  color: #18202f;
+  background: #f4f6f8;
+  font-family:
+    Inter, "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: minmax(620px, 2fr) minmax(320px, 1fr);
+  min-height: 100vh;
+  gap: 1px;
+  background: #d9dee7;
+}
+
+.floor-plan-panel,
+.selection-panel {
+  background: #ffffff;
+  padding: 24px;
+}
+
+.toolbar {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.eyebrow {
+  color: #516075;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0 0 6px;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  font-size: 28px;
+  line-height: 1.2;
+  margin-bottom: 0;
+}
+
+h2 {
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.status-pill {
+  border: 1px solid #c7d2e2;
+  border-radius: 999px;
+  color: #31527c;
+  font-size: 13px;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.floor-plan-placeholder {
+  aspect-ratio: 3 / 4;
+  background:
+    linear-gradient(90deg, rgba(33, 43, 58, 0.1) 1px, transparent 1px),
+    linear-gradient(rgba(33, 43, 58, 0.1) 1px, transparent 1px), #fbfcfd;
+  background-size: 48px 48px;
+  border: 1px solid #c9d0dc;
+  min-height: 620px;
+  position: relative;
+}
+
+.cabinet-group-marker {
+  align-items: center;
+  background: rgba(74, 144, 226, 0.12);
+  border: 2px solid #2d73d5;
+  color: #1557b0;
+  display: flex;
+  font-size: 12px;
+  font-weight: 700;
+  justify-content: center;
+  position: absolute;
+}
+
+.marker-a {
+  height: 44px;
+  left: 22%;
+  top: 34%;
+  width: 170px;
+}
+
+.marker-b {
+  height: 150px;
+  left: 42%;
+  top: 50%;
+  width: 50px;
+}
+
+.marker-c {
+  height: 44px;
+  right: 16%;
+  top: 62%;
+  width: 150px;
+}
+
+.hint {
+  color: #516075;
+  font-size: 13px;
+  margin: 12px 0 0;
+}
+
+.selection-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.selection-panel p:last-child {
+  color: #516075;
+  line-height: 1.7;
+}

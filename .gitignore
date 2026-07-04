@@ -22,6 +22,8 @@ assets/products/*
 npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*
+test-results/
+playwright-report/
 
 # OS/editor files
 .DS_Store
