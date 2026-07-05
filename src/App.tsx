@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import { floorPlanConfig, getCabinetGroupStatusLabel } from "./floorPlanConfig";
+import { createProductImageAssetPath } from "./productImageAssets";
 import {
   applyCabinetTemplate,
   clearProductSlot,
@@ -40,6 +41,22 @@ type ExportFeedback = {
   path: string;
 };
 
+type ProductImageImportResult = {
+  relativePath: string;
+};
+
+declare global {
+  interface Window {
+    mallShelfStudio?: {
+      platform: string;
+      importProductImage?: (file: {
+        name: string;
+        arrayBuffer: ArrayBuffer;
+      }) => Promise<ProductImageImportResult>;
+    };
+  }
+}
+
 type LeaveIntent =
   | {
       type: "main";
@@ -57,7 +74,13 @@ function normalizeCabinetCount(value: number) {
   return Math.min(12, Math.max(1, Math.round(value)));
 }
 
-function ProductSlotContents({ slot }: { slot?: ProductSlot }) {
+function ProductSlotContents({
+  resolveImageSrc,
+  slot,
+}: {
+  resolveImageSrc: (imagePath: string) => string;
+  slot?: ProductSlot;
+}) {
   if (!slot || (!slot.imagePath && !slot.name && !slot.code)) {
     return null;
   }
@@ -68,7 +91,7 @@ function ProductSlotContents({ slot }: { slot?: ProductSlot }) {
         <img
           alt={slot.name || slot.code || "商品图片"}
           className="product-slot-image"
-          src={slot.imagePath}
+          src={resolveImageSrc(slot.imagePath)}
         />
       ) : null}
       {slot.name ? <span className="product-name">{slot.name}</span> : null}
@@ -93,6 +116,8 @@ export function App() {
   const [templateName, setTemplateName] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [cabinetCountDrafts, setCabinetCountDrafts] = useState<Record<string, string>>({});
+  const [productImagePreviewUrls, setProductImagePreviewUrls] = useState<Record<string, string>>({});
+  const productImageImportSequence = useRef(0);
   const dragState = useRef<DragState | null>(null);
   const floorPlanCanvasRef = useRef<HTMLDivElement | null>(null);
   const selectedGroup = floorPlanConfig.cabinetGroups.find(
@@ -389,6 +414,37 @@ export function App() {
     );
   }
 
+  async function uploadSelectedProductImage(file: File | null) {
+    if (!file) {
+      return;
+    }
+
+    productImageImportSequence.current += 1;
+    const fallbackPath = createProductImageAssetPath(
+      file.name,
+      new Date(),
+      productImageImportSequence.current,
+    );
+    const previewUrl = URL.createObjectURL(file);
+    let relativePath = fallbackPath;
+
+    try {
+      const importedImage = await window.mallShelfStudio?.importProductImage?.({
+        name: file.name,
+        arrayBuffer: await file.arrayBuffer(),
+      });
+      relativePath = importedImage?.relativePath ?? fallbackPath;
+    } catch {
+      relativePath = fallbackPath;
+    }
+
+    setProductImagePreviewUrls((previewUrls) => ({
+      ...previewUrls,
+      [relativePath]: previewUrl,
+    }));
+    updateSelectedProductSlot("imagePath", relativePath);
+  }
+
   function clearSelectedProductSlot() {
     if (!selectedGroupState || !editingCabinet || !selectedProductSlotState) {
       return;
@@ -403,6 +459,10 @@ export function App() {
         selectedProductSlotState.slotIndex,
       ),
     );
+  }
+
+  function resolveProductImageSrc(imagePath: string) {
+    return productImagePreviewUrls[imagePath] ?? (imagePath.startsWith("/") ? imagePath : `/${imagePath}`);
   }
 
   function updateEditingLayerCount(layerCount: number) {
@@ -834,7 +894,7 @@ export function App() {
                             onClick={() => setSelectedProductSlot({ layerIndex, slotIndex })}
                             type="button"
                           >
-                            <ProductSlotContents slot={slot} />
+                            <ProductSlotContents resolveImageSrc={resolveProductImageSrc} slot={slot} />
                           </button>
                         );
                       })}
@@ -860,16 +920,20 @@ export function App() {
                   </div>
                 </dl>
                 <label>
-                  图片路径
+                  上传商品图片
                   <input
-                    aria-label="图片路径"
-                    onChange={(event) =>
-                      updateSelectedProductSlot("imagePath", event.currentTarget.value)
-                    }
-                    type="text"
-                    value={selectedProductSlotState.imagePath ?? ""}
+                    accept="image/*"
+                    aria-label="上传商品图片"
+                    onChange={(event) => {
+                      void uploadSelectedProductImage(event.currentTarget.files?.[0] ?? null);
+                      event.currentTarget.value = "";
+                    }}
+                    type="file"
                   />
                 </label>
+                {selectedProductSlotState.imagePath ? (
+                  <p className="product-image-path">{selectedProductSlotState.imagePath}</p>
+                ) : null}
                 <label>
                   名称
                   <input
@@ -960,7 +1024,7 @@ export function App() {
                                 className="cabinet-preview-slot"
                                 key={slotIndex}
                               >
-                                <ProductSlotContents slot={slot} />
+                                <ProductSlotContents resolveImageSrc={resolveProductImageSrc} slot={slot} />
                               </div>
                             );
                           })}
@@ -1182,7 +1246,7 @@ export function App() {
                                 className="cabinet-preview-slot"
                                 key={slotIndex}
                               >
-                                <ProductSlotContents slot={slot} />
+                                <ProductSlotContents resolveImageSrc={resolveProductImageSrc} slot={slot} />
                               </div>
                             );
                           })}

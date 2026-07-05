@@ -184,7 +184,7 @@ test("edits and clears one product slot at a time", async ({ page }) => {
   await page.getByRole("button", { name: "选择 A00-1 第1层第2格" }).click();
 
   await expect(page.getByText("第 1 层 / 第 2 格")).toBeVisible();
-  await page.getByLabel("图片路径").fill("assets/products/bag.png");
+  await page.getByLabel("上传商品图片").setInputFiles("public/assets/products/sample-bag.svg");
   await page.getByLabel("名称").fill("女款休闲包");
   await page.getByLabel("编码").fill("MEFBCOA52");
 
@@ -193,7 +193,7 @@ test("edits and clears one product slot at a time", async ({ page }) => {
 
   await page.getByRole("button", { name: "清空当前格子" }).click();
 
-  await expect(page.getByLabel("图片路径")).toHaveValue("");
+  await expect(page.locator(".product-slot-editor").getByText(/^assets\/products\//)).toBeHidden();
   await expect(page.getByLabel("名称")).toHaveValue("");
   await expect(page.getByLabel("编码")).toHaveValue("");
 });
@@ -204,7 +204,7 @@ test("renders product image name and code in previews", async ({ page }) => {
   await page.getByRole("button", { name: "选择货柜组 A00" }).click();
   await page.getByRole("button", { name: "编辑商品位" }).click();
   await page.getByRole("button", { name: "选择 A00-1 第1层第2格" }).click();
-  await page.getByLabel("图片路径").fill("/assets/products/sample-bag.svg");
+  await page.getByLabel("上传商品图片").setInputFiles("public/assets/products/sample-bag.svg");
   await page.getByLabel("名称").fill("女款休闲包");
   await page.getByLabel("编码").fill("MEFBCOA52");
   await page.getByRole("button", { name: "返回主页" }).click();
@@ -221,6 +221,30 @@ test("renders product image name and code in previews", async ({ page }) => {
   await expect(modalSlot.getByRole("img", { name: "女款休闲包" })).toBeVisible();
   await expect(modalSlot.getByText("女款休闲包")).toBeVisible();
   await expect(modalSlot.getByText("MEFBCOA52")).toBeVisible();
+});
+
+test("uploads a product image as a relative asset path", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "选择货柜组 A00" }).click();
+  await page.getByRole("button", { name: "编辑商品位" }).click();
+  await page.getByRole("button", { name: "选择 A00-1 第1层第2格" }).click();
+  await page.getByLabel("上传商品图片").setInputFiles("public/assets/products/sample-bag.svg");
+  await page.getByLabel("名称").fill("女款休闲包");
+
+  await expect(page.locator(".product-slot-editor").getByText(/^assets\/products\//)).toBeVisible();
+  await expect(page.locator(".product-cabinet-preview").getByRole("img", { name: "女款休闲包" })).toBeVisible();
+
+  const savedImagePath = await page.evaluate(() => {
+    const savedState = window.localStorage.getItem("mall-shelf-studio.project-state");
+    const parsedState = savedState ? JSON.parse(savedState) : null;
+
+    return parsedState?.cabinetGroups?.A00?.cabinets?.[0]?.slots?.[1]?.imagePath;
+  });
+
+  expect(savedImagePath).toMatch(/^assets\/products\/product_\d{14}_\d{3}\.svg$/);
+  expect(savedImagePath).not.toContain("C:");
+  expect(savedImagePath).not.toContain("base64");
 });
 
 test("exports the selected cabinet group parallel view", async ({ page }) => {

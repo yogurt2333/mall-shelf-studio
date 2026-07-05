@@ -16,6 +16,7 @@ import {
   updateCabinetGroupPosition,
   validateCabinetStructure,
 } from "../src/projectState";
+import { createProductImageAssetPath } from "../src/productImageAssets";
 
 describe("project state cabinet group calibration", () => {
   test("creates cabinet instances for each cabinet group count", () => {
@@ -193,6 +194,22 @@ describe("project state product slot editing", () => {
       name: "",
       code: "",
     });
+  });
+
+  test("stores uploaded product image assets as relative project paths", () => {
+    const imagePath = createProductImageAssetPath(
+      "C:/Users/demo/Desktop/Bag Photo.JPG",
+      new Date("2026-07-04T15:30:12"),
+      7,
+    );
+    const state = updateProductSlot(createInitialProjectState(), "A00", 1, 0, 1, {
+      imagePath,
+    });
+
+    expect(imagePath).toBe("assets/products/product_20260704153012_007.jpg");
+    expect(imagePath).not.toMatch(/^[a-z]:/i);
+    expect(imagePath).not.toContain("base64");
+    expect(state.cabinetGroups.A00.cabinets[0].slots[1].imagePath).toBe(imagePath);
   });
 });
 
