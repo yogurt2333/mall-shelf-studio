@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import { floorPlanConfig, getCabinetGroupStatusLabel } from "./floorPlanConfig";
 import {
+  applyCabinetTemplate,
+  deleteCabinetTemplate,
+  saveCabinetTemplate,
   selectCabinetGroup,
   setCabinetGroupLocked,
   updateCabinetStructure,
@@ -28,6 +31,8 @@ export function App() {
   const [previewStartIndex, setPreviewStartIndex] = useState(0);
   const [activeView, setActiveView] = useState<"main" | "templateEditor">("main");
   const [editingCabinetIndex, setEditingCabinetIndex] = useState(0);
+  const [templateName, setTemplateName] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const dragState = useRef<DragState | null>(null);
   const floorPlanCanvasRef = useRef<HTMLDivElement | null>(null);
   const selectedGroup = floorPlanConfig.cabinetGroups.find(
@@ -231,6 +236,37 @@ export function App() {
     });
   }
 
+  function saveCurrentCabinetTemplate() {
+    if (!editingCabinet) {
+      return;
+    }
+
+    const nextTemplateId = `template_${(projectState.cabinetTemplates.length + 1)
+      .toString()
+      .padStart(3, "0")}`;
+
+    setProjectState((state) => saveCabinetTemplate(state, templateName, editingCabinet.structure));
+    setSelectedTemplateId(nextTemplateId);
+    setTemplateName("");
+  }
+
+  function applySelectedCabinetTemplate() {
+    if (!selectedGroupState || !editingCabinet || !selectedTemplateId) {
+      return;
+    }
+
+    setProjectState((state) =>
+      applyCabinetTemplate(state, selectedGroupState.id, editingCabinet.order, selectedTemplateId),
+    );
+  }
+
+  function deleteSelectedCabinetTemplate(templateId: string) {
+    setProjectState((state) => deleteCabinetTemplate(state, templateId));
+    setSelectedTemplateId((currentTemplateId) =>
+      currentTemplateId === templateId ? "" : currentTemplateId,
+    );
+  }
+
   return (
     <main className="app-shell">
       <section className="floor-plan-panel" aria-labelledby="floor-plan-title">
@@ -414,11 +450,65 @@ export function App() {
                     ? `剩余底部留白 ${editingValidation.bottomBlankPercent}%`
                     : editingValidation?.message}
                 </p>
+                <section className="template-library" aria-label="模板库">
+                  <label htmlFor="template-name-input">
+                    模板名称
+                    <input
+                      id="template-name-input"
+                      onChange={(event) => setTemplateName(event.currentTarget.value)}
+                      type="text"
+                      value={templateName}
+                    />
+                  </label>
+                  <label htmlFor="template-select">
+                    选择模板
+                    <select
+                      id="template-select"
+                      onChange={(event) => setSelectedTemplateId(event.currentTarget.value)}
+                      value={selectedTemplateId}
+                    >
+                      <option value="">未选择模板</option>
+                      {projectState.cabinetTemplates.map((template) => (
+                        <option key={template.id} value={template.id}>
+                          {template.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <ul className="template-list">
+                    {projectState.cabinetTemplates.map((template) => (
+                      <li key={template.id}>
+                        <button
+                          aria-pressed={selectedTemplateId === template.id}
+                          onClick={() => setSelectedTemplateId(template.id)}
+                          type="button"
+                        >
+                          {template.name}
+                        </button>
+                        <button
+                          aria-label={`删除模板 ${template.name}`}
+                          onClick={() => deleteSelectedCabinetTemplate(template.id)}
+                          type="button"
+                        >
+                          删除
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
                 <div className="template-actions">
-                  <button disabled={!editingValidation?.isValid} type="button">
+                  <button
+                    disabled={!editingValidation?.isValid || !templateName.trim()}
+                    onClick={saveCurrentCabinetTemplate}
+                    type="button"
+                  >
                     保存此模板
                   </button>
-                  <button disabled={!editingValidation?.isValid} type="button">
+                  <button
+                    disabled={!editingValidation?.isValid || !selectedTemplateId}
+                    onClick={applySelectedCabinetTemplate}
+                    type="button"
+                  >
                     应用模板
                   </button>
                 </div>

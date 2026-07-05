@@ -49,6 +49,12 @@ export type CabinetStructureValidation = {
   message: string | null;
 };
 
+export type CabinetTemplate = {
+  id: string;
+  name: string;
+  structure: CabinetStructure;
+};
+
 export type ProjectState = {
   floorPlan: {
     imagePath: string;
@@ -60,6 +66,7 @@ export type ProjectState = {
   };
   selectedCabinetGroupId: string | null;
   cabinetGroups: Record<string, ProjectStateCabinetGroup>;
+  cabinetTemplates: CabinetTemplate[];
 };
 
 export function createInitialProjectState(): ProjectState {
@@ -73,6 +80,7 @@ export function createInitialProjectState(): ProjectState {
       })),
     },
     selectedCabinetGroupId: null,
+    cabinetTemplates: [],
     cabinetGroups: Object.fromEntries(
       floorPlanConfig.cabinetGroups.map((group) => [
         group.id,
@@ -87,6 +95,68 @@ export function createInitialProjectState(): ProjectState {
         },
       ]),
     ),
+  };
+}
+
+export function saveCabinetTemplate(
+  state: ProjectState,
+  name: string,
+  structure: CabinetStructure,
+): ProjectState {
+  const templateName = name.trim();
+
+  if (!templateName || !validateCabinetStructure(structure).isValid) {
+    return state;
+  }
+
+  return {
+    ...state,
+    cabinetTemplates: [
+      ...state.cabinetTemplates,
+      {
+        id: createCabinetTemplateId(state.cabinetTemplates.length + 1),
+        name: templateName,
+        structure: cloneCabinetStructure(structure),
+      },
+    ],
+  };
+}
+
+export function applyCabinetTemplate(
+  state: ProjectState,
+  cabinetGroupId: string,
+  cabinetOrder: number,
+  templateId: string,
+): ProjectState {
+  const template = state.cabinetTemplates.find((cabinetTemplate) => cabinetTemplate.id === templateId);
+
+  if (!template) {
+    return state;
+  }
+
+  return updateCabinetStructure(
+    state,
+    cabinetGroupId,
+    cabinetOrder,
+    cloneCabinetStructure(template.structure),
+  );
+}
+
+export function deleteCabinetTemplate(state: ProjectState, templateId: string): ProjectState {
+  return {
+    ...state,
+    cabinetTemplates: state.cabinetTemplates.filter((template) => template.id !== templateId),
+  };
+}
+
+function createCabinetTemplateId(order: number) {
+  return `template_${order.toString().padStart(3, "0")}`;
+}
+
+function cloneCabinetStructure(structure: CabinetStructure): CabinetStructure {
+  return {
+    bottomBlankPercent: structure.bottomBlankPercent,
+    layers: structure.layers.map((layer) => ({ ...layer })),
   };
 }
 

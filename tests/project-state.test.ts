@@ -1,6 +1,9 @@
 import { describe, expect, test } from "vitest";
 import {
+  applyCabinetTemplate,
   createInitialProjectState,
+  deleteCabinetTemplate,
+  saveCabinetTemplate,
   setCabinetGroupLocked,
   updateCabinetStructure,
   updateCabinetGroupCabinetCount,
@@ -88,5 +91,48 @@ describe("project state cabinet structure editing", () => {
       bottomBlankPercent: 0,
       message: "层高和层间距总和不能超过 100%",
     });
+  });
+});
+
+describe("project state cabinet template library", () => {
+  test("saves and applies a copied cabinet template to one cabinet", () => {
+    const state = createInitialProjectState();
+    const customStructure = {
+      layers: [{ heightPercent: 50, gapAfterPercent: 0, slotCount: 2 }],
+      bottomBlankPercent: 50,
+    };
+
+    const savedState = saveCabinetTemplate(state, "单层双格", customStructure);
+    const appliedState = applyCabinetTemplate(
+      savedState,
+      "A00",
+      2,
+      savedState.cabinetTemplates[0].id,
+    );
+
+    expect(savedState.cabinetTemplates).toHaveLength(1);
+    expect(savedState.cabinetTemplates[0].name).toBe("单层双格");
+    expect(appliedState.cabinetGroups.A00.cabinets[1].structure).toEqual(customStructure);
+    expect(appliedState.cabinetGroups.A00.cabinets[0].structure.layers).toHaveLength(3);
+  });
+
+  test("deleting a cabinet template does not change already applied cabinet structure", () => {
+    const state = createInitialProjectState();
+    const customStructure = {
+      layers: [{ heightPercent: 50, gapAfterPercent: 0, slotCount: 2 }],
+      bottomBlankPercent: 50,
+    };
+
+    const savedState = saveCabinetTemplate(state, "单层双格", customStructure);
+    const appliedState = applyCabinetTemplate(
+      savedState,
+      "A00",
+      2,
+      savedState.cabinetTemplates[0].id,
+    );
+    const deletedState = deleteCabinetTemplate(appliedState, savedState.cabinetTemplates[0].id);
+
+    expect(deletedState.cabinetTemplates).toHaveLength(0);
+    expect(deletedState.cabinetGroups.A00.cabinets[1].structure).toEqual(customStructure);
   });
 });

@@ -413,7 +413,8 @@ h2 {
   gap: 4px;
 }
 
-.structure-editor input {
+.structure-editor input,
+.structure-editor select {
   border: 1px solid #c7d2e2;
   color: #18202f;
   font: inherit;
@@ -442,6 +443,46 @@ h2 {
 
 .validation-ok {
   color: #2b6b3f;
+}
+
+.template-library {
+  border-top: 1px solid #d5dce7;
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.template-list {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.template-list li {
+  align-items: center;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.template-list button {
+  background: #ffffff;
+  border: 1px solid #c7d2e2;
+  color: #1557b0;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 0;
+  padding: 7px 8px;
+  text-align: left;
+}
+
+.template-list button[aria-pressed="true"] {
+  background: #e8f2ff;
+  border-color: #1557b0;
 }
 
 .template-actions {

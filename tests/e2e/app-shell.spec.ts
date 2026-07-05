@@ -96,13 +96,49 @@ test("template editing changes only the current cabinet", async ({ page }) => {
   await page.getByRole("button", { name: "选择货柜组 A00" }).click();
   await page.getByRole("button", { name: "编辑模板" }).click();
   await page.getByRole("button", { name: "下一货柜" }).click();
-  await page.getByLabel("第 1 层层高").fill("45");
-  await expect(page.getByLabel("第 1 层层高")).toHaveValue("45");
+  await page.getByLabel("第 1 层层高").fill("35");
+  await expect(page.getByLabel("第 1 层层高")).toHaveValue("35");
 
   await page.getByRole("button", { name: "上一货柜" }).click();
 
   await expect(page.locator(".template-editor-header strong")).toHaveText("A00-1");
   await expect(page.getByLabel("第 1 层层高")).toHaveValue("28");
+});
+
+test("saves and applies a single-cabinet template from the template library", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "选择货柜组 A00" }).click();
+  await page.getByRole("button", { name: "编辑模板" }).click();
+  await page.getByLabel("第 1 层层高").fill("35");
+  await page.getByLabel("模板名称").fill("高层双格模板");
+  await page.getByRole("button", { name: "保存此模板" }).click();
+
+  await expect(page.getByRole("button", { name: "高层双格模板", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "下一货柜" }).click();
+  await expect(page.getByLabel("第 1 层层高")).toHaveValue("28");
+  await page.getByRole("button", { name: "应用模板" }).click();
+
+  await expect(page.getByLabel("第 1 层层高")).toHaveValue("35");
+});
+
+test("deletes a template without changing an already applied cabinet", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "选择货柜组 A00" }).click();
+  await page.getByRole("button", { name: "编辑模板" }).click();
+  await page.getByLabel("第 1 层层高").fill("35");
+  await page.getByLabel("模板名称").fill("高层双格模板");
+  await page.getByRole("button", { name: "保存此模板" }).click();
+  await page.getByRole("button", { name: "下一货柜" }).click();
+  await page.getByRole("button", { name: "应用模板" }).click();
+  await expect(page.getByLabel("第 1 层层高")).toHaveValue("35");
+
+  await page.getByRole("button", { name: "删除模板 高层双格模板" }).click();
+
+  await expect(page.getByText("高层双格模板")).toBeHidden();
+  await expect(page.getByLabel("第 1 层层高")).toHaveValue("35");
 });
 
 test("auto-saves and restores the selected cabinet group", async ({ page }) => {

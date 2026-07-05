@@ -24,6 +24,7 @@ function mergeWithFallbackState(savedState: ProjectState): ProjectState {
       ...fallbackState.floorPlan,
       ...savedState.floorPlan,
     },
+    cabinetTemplates: savedState.cabinetTemplates ?? fallbackState.cabinetTemplates,
     cabinetGroups: Object.fromEntries(
       Object.entries(fallbackState.cabinetGroups).map(([id, fallbackCabinetGroup]) => [
         id,
