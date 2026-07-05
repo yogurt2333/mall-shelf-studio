@@ -2,16 +2,19 @@ import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from 
 import { floorPlanConfig, getCabinetGroupStatusLabel } from "./floorPlanConfig";
 import {
   applyCabinetTemplate,
+  clearProductSlot,
   deleteCabinetTemplate,
   saveCabinetTemplate,
   selectCabinetGroup,
   setCabinetGroupLocked,
+  updateProductSlot,
   updateCabinetStructure,
   updateCabinetGroupCabinetCount,
   updateCabinetGroupPosition,
   validateCabinetStructure,
   type CabinetStructure,
   type CabinetGroupPosition,
+  type ProductSlot,
 } from "./projectState";
 import { useBrowserProjectState } from "./useBrowserProjectState";
 
@@ -25,6 +28,8 @@ type DragState = {
   startPosition: CabinetGroupPosition;
 };
 
+type ProductSlotSelection = Pick<ProductSlot, "layerIndex" | "slotIndex">;
+
 function normalizeCabinetCount(value: number) {
   if (!Number.isFinite(value)) {
     return 1;
@@ -37,8 +42,12 @@ export function App() {
   const { projectState, saveStatus, setProjectState } = useBrowserProjectState();
   const [isCalibrationMode, setIsCalibrationMode] = useState(false);
   const [previewStartIndex, setPreviewStartIndex] = useState(0);
-  const [activeView, setActiveView] = useState<"main" | "templateEditor">("main");
+  const [activeView, setActiveView] = useState<"main" | "templateEditor" | "productEditor">("main");
   const [editingCabinetIndex, setEditingCabinetIndex] = useState(0);
+  const [selectedProductSlot, setSelectedProductSlot] = useState<ProductSlotSelection>({
+    layerIndex: 0,
+    slotIndex: 0,
+  });
   const [templateName, setTemplateName] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [cabinetCountDrafts, setCabinetCountDrafts] = useState<Record<string, string>>({});
@@ -53,6 +62,11 @@ export function App() {
     previewStartIndex + 2,
   );
   const editingCabinet = selectedGroupState?.cabinets[editingCabinetIndex];
+  const selectedProductSlotState = editingCabinet?.slots.find(
+    (slot) =>
+      slot.layerIndex === selectedProductSlot.layerIndex &&
+      slot.slotIndex === selectedProductSlot.slotIndex,
+  );
   const editingValidation = editingCabinet
     ? validateCabinetStructure(editingCabinet.structure)
     : null;
@@ -60,6 +74,7 @@ export function App() {
   useEffect(() => {
     setPreviewStartIndex(0);
     setEditingCabinetIndex(0);
+    setSelectedProductSlot({ layerIndex: 0, slotIndex: 0 });
     setActiveView("main");
   }, [projectState.selectedCabinetGroupId]);
 
@@ -280,6 +295,55 @@ export function App() {
     });
   }
 
+  function showPreviousEditingCabinet() {
+    setEditingCabinetIndex((index) => Math.max(0, index - 1));
+    setSelectedProductSlot({ layerIndex: 0, slotIndex: 0 });
+  }
+
+  function showNextEditingCabinet() {
+    if (!selectedGroupState) {
+      return;
+    }
+
+    setEditingCabinetIndex((index) => Math.min(selectedGroupState.cabinets.length - 1, index + 1));
+    setSelectedProductSlot({ layerIndex: 0, slotIndex: 0 });
+  }
+
+  function updateSelectedProductSlot(field: "imagePath" | "name" | "code", value: string) {
+    if (!selectedGroupState || !editingCabinet || !selectedProductSlotState) {
+      return;
+    }
+
+    setProjectState((state) =>
+      updateProductSlot(
+        state,
+        selectedGroupState.id,
+        editingCabinet.order,
+        selectedProductSlotState.layerIndex,
+        selectedProductSlotState.slotIndex,
+        {
+          [field]: field === "imagePath" && !value.trim() ? null : value,
+        },
+      ),
+    );
+  }
+
+  function clearSelectedProductSlot() {
+    if (!selectedGroupState || !editingCabinet || !selectedProductSlotState) {
+      return;
+    }
+
+    setProjectState((state) =>
+      clearProductSlot(
+        state,
+        selectedGroupState.id,
+        editingCabinet.order,
+        selectedProductSlotState.layerIndex,
+        selectedProductSlotState.slotIndex,
+      ),
+    );
+  }
+
   function updateEditingLayerCount(layerCount: number) {
     if (!editingCabinet) {
       return;
@@ -414,7 +478,7 @@ export function App() {
               <button
                 aria-label="上一货柜"
                 disabled={editingCabinetIndex === 0}
-                onClick={() => setEditingCabinetIndex((index) => Math.max(0, index - 1))}
+                onClick={showPreviousEditingCabinet}
                 type="button"
               >
                 ‹
@@ -423,11 +487,7 @@ export function App() {
               <button
                 aria-label="下一货柜"
                 disabled={editingCabinetIndex >= selectedGroupState.cabinets.length - 1}
-                onClick={() =>
-                  setEditingCabinetIndex((index) =>
-                    Math.min(selectedGroupState.cabinets.length - 1, index + 1),
-                  )
-                }
+                onClick={showNextEditingCabinet}
                 type="button"
               >
                 ›
@@ -578,6 +638,130 @@ export function App() {
               </section>
             </div>
           </>
+        ) : selectedGroup &&
+          selectedGroupState &&
+          activeView === "productEditor" &&
+          editingCabinet &&
+          selectedProductSlotState ? (
+          <>
+            <button className="text-button" onClick={() => setActiveView("main")} type="button">
+              返回主页
+            </button>
+            <h2>编辑商品位</h2>
+            <div className="product-editor-header">
+              <button
+                aria-label="上一货柜"
+                disabled={editingCabinetIndex === 0}
+                onClick={showPreviousEditingCabinet}
+                type="button"
+              >
+                ‹
+              </button>
+              <strong>{`${selectedGroup.id}-${editingCabinet.order}`}</strong>
+              <button
+                aria-label="下一货柜"
+                disabled={editingCabinetIndex >= selectedGroupState.cabinets.length - 1}
+                onClick={showNextEditingCabinet}
+                type="button"
+              >
+                ›
+              </button>
+            </div>
+            <div className="product-editor-layout">
+              <article className="cabinet-preview product-cabinet-preview">
+                <span className="cabinet-preview-label">{`${selectedGroup.id}-${editingCabinet.order}`}</span>
+                <div className="cabinet-preview-body">
+                  {editingCabinet.structure.layers.map((layer, layerIndex) => (
+                    <div
+                      className="cabinet-preview-layer"
+                      key={layerIndex}
+                      style={{ flexGrow: layer.heightPercent }}
+                    >
+                      {Array.from({ length: layer.slotCount }, (_, slotIndex) => {
+                        const slot = editingCabinet.slots.find(
+                          (productSlot) =>
+                            productSlot.layerIndex === layerIndex &&
+                            productSlot.slotIndex === slotIndex,
+                        );
+                        const isSelected =
+                          selectedProductSlot.layerIndex === layerIndex &&
+                          selectedProductSlot.slotIndex === slotIndex;
+
+                        return (
+                          <button
+                            aria-label={`选择 ${selectedGroup.id}-${editingCabinet.order} 第${
+                              layerIndex + 1
+                            }层第${slotIndex + 1}格`}
+                            aria-pressed={isSelected}
+                            className="cabinet-preview-slot product-slot-button"
+                            key={slotIndex}
+                            onClick={() => setSelectedProductSlot({ layerIndex, slotIndex })}
+                            type="button"
+                          >
+                            {slot?.imagePath ? (
+                              <span className="product-image-path">{slot.imagePath}</span>
+                            ) : null}
+                            {slot?.name ? <span className="product-name">{slot.name}</span> : null}
+                            {slot?.code ? <span className="product-code">{slot.code}</span> : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </article>
+              <section className="product-slot-editor" aria-label="当前商品位编辑">
+                <dl className="product-slot-details">
+                  <div>
+                    <dt>货柜组</dt>
+                    <dd>{selectedGroup.id}</dd>
+                  </div>
+                  <div>
+                    <dt>货柜</dt>
+                    <dd>{`${selectedGroup.id}-${editingCabinet.order}`}</dd>
+                  </div>
+                  <div>
+                    <dt>位置</dt>
+                    <dd>{`第 ${selectedProductSlotState.layerIndex + 1} 层 / 第 ${
+                      selectedProductSlotState.slotIndex + 1
+                    } 格`}</dd>
+                  </div>
+                </dl>
+                <label>
+                  图片路径
+                  <input
+                    aria-label="图片路径"
+                    onChange={(event) =>
+                      updateSelectedProductSlot("imagePath", event.currentTarget.value)
+                    }
+                    type="text"
+                    value={selectedProductSlotState.imagePath ?? ""}
+                  />
+                </label>
+                <label>
+                  名称
+                  <input
+                    aria-label="名称"
+                    onChange={(event) => updateSelectedProductSlot("name", event.currentTarget.value)}
+                    type="text"
+                    value={selectedProductSlotState.name}
+                  />
+                </label>
+                <label>
+                  编码
+                  <input
+                    aria-label="编码"
+                    onChange={(event) => updateSelectedProductSlot("code", event.currentTarget.value)}
+                    type="text"
+                    value={selectedProductSlotState.code}
+                  />
+                </label>
+                <button onClick={clearSelectedProductSlot} type="button">
+                  清空当前格子
+                </button>
+              </section>
+            </div>
+          </>
         ) : selectedGroup && selectedGroupState ? (
           <>
             <span className="selected-state">已选中货柜组</span>
@@ -649,7 +833,9 @@ export function App() {
               <button onClick={() => setActiveView("templateEditor")} type="button">
                 编辑模板
               </button>
-              <button type="button">编辑商品位</button>
+              <button onClick={() => setActiveView("productEditor")} type="button">
+                编辑商品位
+              </button>
               <button type="button">显示全量并联图</button>
               <button type="button">保存并联图</button>
             </div>

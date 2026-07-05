@@ -4,7 +4,9 @@ import {
   createInitialProjectState,
   deleteCabinetTemplate,
   saveCabinetTemplate,
+  clearProductSlot,
   setCabinetGroupLocked,
+  updateProductSlot,
   updateCabinetStructure,
   updateCabinetGroupCabinetCount,
   updateCabinetGroupPosition,
@@ -146,5 +148,46 @@ describe("project state cabinet template library", () => {
 
     expect(deletedState.cabinetTemplates).toHaveLength(0);
     expect(deletedState.cabinetGroups.A00.cabinets[1].structure).toEqual(customStructure);
+  });
+});
+
+describe("project state product slot editing", () => {
+  test("updates only the selected product slot", () => {
+    const state = createInitialProjectState();
+
+    const updatedState = updateProductSlot(state, "A00", 1, 0, 1, {
+      imagePath: "assets/products/bag.png",
+      name: "女款休闲包",
+      code: "MEFBCOA52",
+    });
+
+    expect(updatedState.cabinetGroups.A00.status).toBe("inProgress");
+    expect(updatedState.cabinetGroups.A00.cabinets[0].slots[1]).toEqual({
+      layerIndex: 0,
+      slotIndex: 1,
+      imagePath: "assets/products/bag.png",
+      name: "女款休闲包",
+      code: "MEFBCOA52",
+    });
+    expect(updatedState.cabinetGroups.A00.cabinets[0].slots[0].name).toBe("");
+    expect(updatedState.cabinetGroups.A00.cabinets[1].slots[1].name).toBe("");
+  });
+
+  test("clears the selected product slot without changing its position", () => {
+    const state = updateProductSlot(createInitialProjectState(), "A00", 1, 0, 1, {
+      imagePath: "assets/products/bag.png",
+      name: "女款休闲包",
+      code: "MEFBCOA52",
+    });
+
+    const updatedState = clearProductSlot(state, "A00", 1, 0, 1);
+
+    expect(updatedState.cabinetGroups.A00.cabinets[0].slots[1]).toEqual({
+      layerIndex: 0,
+      slotIndex: 1,
+      imagePath: null,
+      name: "",
+      code: "",
+    });
   });
 });

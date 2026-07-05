@@ -387,7 +387,37 @@ h2 {
   cursor: not-allowed;
 }
 
+.product-editor-header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.product-editor-header button {
+  background: #ffffff;
+  border: 1px solid #c7d2e2;
+  color: #1557b0;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 700;
+  height: 30px;
+  width: 30px;
+}
+
+.product-editor-header button:disabled {
+  color: #9aa6b6;
+  cursor: not-allowed;
+}
+
 .template-editor-layout {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.product-editor-layout {
   display: grid;
   gap: 14px;
   grid-template-columns: minmax(0, 1fr);
@@ -396,6 +426,12 @@ h2 {
 .template-cabinet-preview {
   margin: 0 auto;
   max-width: 180px;
+  width: 100%;
+}
+
+.product-cabinet-preview {
+  margin: 0 auto;
+  max-width: 220px;
   width: 100%;
 }
 
@@ -488,6 +524,106 @@ h2 {
 .template-actions {
   display: flex;
   gap: 8px;
+}
+
+.product-slot-button {
+  color: #18202f;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font: inherit;
+  gap: 2px;
+  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
+  padding: 4px;
+  text-align: center;
+}
+
+.product-slot-button[aria-pressed="true"] {
+  background: #dff0ff;
+  border: 2px solid #1557b0;
+}
+
+.product-image-path {
+  color: #7b8797;
+  font-size: 8px;
+  overflow-wrap: anywhere;
+}
+
+.product-name {
+  color: #111827;
+  font-size: 10px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.product-code {
+  color: #1557b0;
+  font-size: 10px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.product-slot-editor {
+  border: 1px solid #d5dce7;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.product-slot-details {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.product-slot-details div {
+  border: 1px solid #d5dce7;
+  padding: 8px;
+}
+
+.product-slot-details dt {
+  color: #516075;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.product-slot-details dd {
+  color: #18202f;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.product-slot-editor label {
+  color: #516075;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 4px;
+}
+
+.product-slot-editor input {
+  border: 1px solid #c7d2e2;
+  color: #18202f;
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 9px;
+  width: 100%;
+}
+
+.product-slot-editor button {
+  background: #ffffff;
+  border: 1px solid #c7d2e2;
+  color: #1557b0;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 10px;
 }
 
 .calibration-card {

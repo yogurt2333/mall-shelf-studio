@@ -42,6 +42,8 @@ export type ProductSlot = {
   code: string;
 };
 
+export type ProductSlotUpdate = Partial<Pick<ProductSlot, "imagePath" | "name" | "code">>;
+
 export type CabinetStructureValidation = {
   isValid: boolean;
   usedPercent: number;
@@ -260,6 +262,61 @@ export function updateCabinetStructure(
       },
     },
   };
+}
+
+export function updateProductSlot(
+  state: ProjectState,
+  cabinetGroupId: string,
+  cabinetOrder: number,
+  layerIndex: number,
+  slotIndex: number,
+  productSlotUpdate: ProductSlotUpdate,
+): ProjectState {
+  const cabinetGroup = state.cabinetGroups[cabinetGroupId];
+
+  if (!cabinetGroup) {
+    return state;
+  }
+
+  return {
+    ...state,
+    cabinetGroups: {
+      ...state.cabinetGroups,
+      [cabinetGroupId]: {
+        ...cabinetGroup,
+        status: "inProgress",
+        cabinets: cabinetGroup.cabinets.map((cabinet) =>
+          cabinet.order === cabinetOrder
+            ? {
+                ...cabinet,
+                slots: cabinet.slots.map((slot) =>
+                  slot.layerIndex === layerIndex && slot.slotIndex === slotIndex
+                    ? {
+                        ...slot,
+                        ...productSlotUpdate,
+                      }
+                    : slot,
+                ),
+              }
+            : cabinet,
+        ),
+      },
+    },
+  };
+}
+
+export function clearProductSlot(
+  state: ProjectState,
+  cabinetGroupId: string,
+  cabinetOrder: number,
+  layerIndex: number,
+  slotIndex: number,
+): ProjectState {
+  return updateProductSlot(state, cabinetGroupId, cabinetOrder, layerIndex, slotIndex, {
+    imagePath: null,
+    name: "",
+    code: "",
+  });
 }
 
 export function validateCabinetStructure(
