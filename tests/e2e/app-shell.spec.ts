@@ -154,6 +154,45 @@ test("saves and applies a single-cabinet template from the template library", as
   await expect(page.getByLabel("第 1 层层高")).toHaveValue("35");
 });
 
+test("confirms before applying a template to a cabinet with products", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "选择货柜组 A00" }).click();
+  await page.getByRole("button", { name: "编辑商品位" }).click();
+  await page.locator(".product-editor-header button").nth(1).click();
+  await page.getByLabel("名称").fill("女款休闲包");
+  await page.getByRole("button", { name: "返回主页" }).click();
+  await page.getByRole("button", { name: "不保存并联图直接离开" }).click();
+
+  await page.getByRole("button", { name: "编辑模板" }).click();
+  await page.locator(".template-editor-header button").nth(0).click();
+  await expect(page.locator(".template-editor-header strong")).toHaveText("A00-1");
+  await page.getByLabel("第 1 层层高").fill("35");
+  await page.getByLabel("模板名称").fill("高层模板");
+  await page.getByRole("button", { name: "保存此模板" }).click();
+  await page.locator(".template-editor-header button").nth(1).click();
+  await expect(page.locator(".template-editor-header strong")).toHaveText("A00-2");
+  await page.getByRole("button", { name: "应用模板" }).click();
+
+  const dialog = page.getByRole("dialog", { name: "当前货柜已有商品信息" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "取消" }).click();
+
+  await expect(dialog).toBeHidden();
+  await expect(page.getByLabel("第 1 层层高")).toHaveValue("28");
+
+  await page.getByRole("button", { name: "应用模板" }).click();
+  await page.getByRole("button", { name: "确认应用模板" }).click();
+
+  await expect(page.getByLabel("第 1 层层高")).toHaveValue("35");
+  await page.getByRole("button", { name: "返回主页" }).click();
+  await page.getByRole("button", { name: "不保存并联图直接离开" }).click();
+  await page.getByRole("button", { name: "编辑商品位" }).click();
+  await expect(page.locator(".product-editor-header strong")).toHaveText("A00-2");
+
+  await expect(page.getByLabel("名称")).toHaveValue("女款休闲包");
+});
+
 test("deletes a template without changing an already applied cabinet", async ({ page }) => {
   await page.goto("/");
 

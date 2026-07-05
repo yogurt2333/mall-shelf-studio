@@ -66,12 +66,22 @@ type LeaveIntent =
       cabinetGroupId: string;
     };
 
+type PendingTemplateApplication = {
+  cabinetGroupId: string;
+  cabinetOrder: number;
+  templateId: string;
+};
+
 function normalizeCabinetCount(value: number) {
   if (!Number.isFinite(value)) {
     return 1;
   }
 
   return Math.min(12, Math.max(1, Math.round(value)));
+}
+
+function cabinetHasProductInformation(cabinet: { slots: ProductSlot[] }) {
+  return cabinet.slots.some((slot) => slot.imagePath || slot.name.trim() || slot.code.trim());
 }
 
 function ProductSlotContents({
@@ -113,6 +123,8 @@ export function App() {
   const [isFullPreviewOpen, setIsFullPreviewOpen] = useState(false);
   const [exportFeedback, setExportFeedback] = useState<ExportFeedback | null>(null);
   const [pendingLeaveIntent, setPendingLeaveIntent] = useState<LeaveIntent | null>(null);
+  const [pendingTemplateApplication, setPendingTemplateApplication] =
+    useState<PendingTemplateApplication | null>(null);
   const [templateName, setTemplateName] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [cabinetCountDrafts, setCabinetCountDrafts] = useState<Record<string, string>>({});
@@ -502,9 +514,44 @@ export function App() {
       return;
     }
 
+    if (cabinetHasProductInformation(editingCabinet)) {
+      setPendingTemplateApplication({
+        cabinetGroupId: selectedGroupState.id,
+        cabinetOrder: editingCabinet.order,
+        templateId: selectedTemplateId,
+      });
+      return;
+    }
+
+    applyTemplateToCabinet({
+      cabinetGroupId: selectedGroupState.id,
+      cabinetOrder: editingCabinet.order,
+      templateId: selectedTemplateId,
+    });
+  }
+
+  function applyTemplateToCabinet(templateApplication: PendingTemplateApplication) {
     setProjectState((state) =>
-      applyCabinetTemplate(state, selectedGroupState.id, editingCabinet.order, selectedTemplateId),
+      applyCabinetTemplate(
+        state,
+        templateApplication.cabinetGroupId,
+        templateApplication.cabinetOrder,
+        templateApplication.templateId,
+      ),
     );
+  }
+
+  function confirmPendingTemplateApplication() {
+    if (!pendingTemplateApplication) {
+      return;
+    }
+
+    applyTemplateToCabinet(pendingTemplateApplication);
+    setPendingTemplateApplication(null);
+  }
+
+  function cancelPendingTemplateApplication() {
+    setPendingTemplateApplication(null);
   }
 
   function deleteSelectedCabinetTemplate(templateId: string) {
@@ -1167,6 +1214,32 @@ export function App() {
           </>
         )}
       </aside>
+      {pendingTemplateApplication ? (
+        <div className="modal-backdrop">
+          <section
+            aria-labelledby="template-application-title"
+            aria-modal="true"
+            className="leave-confirm-modal"
+            role="dialog"
+          >
+            <div className="leave-confirm-content">
+              <p className="eyebrow">应用模板确认</p>
+              <h2 id="template-application-title">当前货柜已有商品信息</h2>
+              <p>
+                应用模板会更新这个货柜的层数和格子。相同层和相同格子的商品会保留，不再存在的格子里的商品会从货柜状态中删除。
+              </p>
+            </div>
+            <div className="leave-confirm-actions">
+              <button onClick={confirmPendingTemplateApplication} type="button">
+                确认应用模板
+              </button>
+              <button className="text-button" onClick={cancelPendingTemplateApplication} type="button">
+                取消
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
       {pendingLeaveIntent ? (
         <div className="modal-backdrop">
           <section

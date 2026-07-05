@@ -134,17 +134,36 @@ export function applyCabinetTemplate(
   templateId: string,
 ): ProjectState {
   const template = state.cabinetTemplates.find((cabinetTemplate) => cabinetTemplate.id === templateId);
+  const cabinetGroup = state.cabinetGroups[cabinetGroupId];
 
-  if (!template) {
+  if (!template || !cabinetGroup) {
     return state;
   }
 
-  return updateCabinetStructure(
-    state,
-    cabinetGroupId,
-    cabinetOrder,
-    cloneCabinetStructure(template.structure),
-  );
+  const normalizedStructure = normalizeCabinetStructure(cloneCabinetStructure(template.structure));
+
+  return {
+    ...state,
+    cabinetGroups: {
+      ...state.cabinetGroups,
+      [cabinetGroupId]: {
+        ...cabinetGroup,
+        status: "inProgress",
+        cabinets: cabinetGroup.cabinets.map((cabinet) =>
+          cabinet.order === cabinetOrder
+            ? {
+                ...cabinet,
+                structure: normalizedStructure,
+                slots: createProductSlots(normalizedStructure).map((slot) => ({
+                  ...slot,
+                  ...findCompatibleProductSlot(cabinet.slots, slot.layerIndex, slot.slotIndex),
+                })),
+              }
+            : cabinet,
+        ),
+      },
+    },
+  };
 }
 
 export function deleteCabinetTemplate(state: ProjectState, templateId: string): ProjectState {
@@ -156,6 +175,26 @@ export function deleteCabinetTemplate(state: ProjectState, templateId: string): 
 
 function createCabinetTemplateId(order: number) {
   return `template_${order.toString().padStart(3, "0")}`;
+}
+
+function findCompatibleProductSlot(
+  slots: ProductSlot[],
+  layerIndex: number,
+  slotIndex: number,
+): ProductSlotUpdate | null {
+  const slot = slots.find(
+    (productSlot) => productSlot.layerIndex === layerIndex && productSlot.slotIndex === slotIndex,
+  );
+
+  if (!slot) {
+    return null;
+  }
+
+  return {
+    imagePath: slot.imagePath,
+    name: slot.name,
+    code: slot.code,
+  };
 }
 
 function cloneCabinetStructure(structure: CabinetStructure): CabinetStructure {

@@ -154,6 +154,51 @@ describe("project state cabinet template library", () => {
     expect(deletedState.cabinetTemplates).toHaveLength(0);
     expect(deletedState.cabinetGroups.A00.cabinets[1].structure).toEqual(customStructure);
   });
+
+  test("preserves compatible product slots and drops removed slots when applying a template", () => {
+    const customStructure = {
+      layers: [
+        { heightPercent: 60, gapAfterPercent: 0, slotCount: 2 },
+        { heightPercent: 30, gapAfterPercent: 0, slotCount: 1 },
+      ],
+      bottomBlankPercent: 10,
+    };
+    const savedState = saveCabinetTemplate(createInitialProjectState(), "two layer", customStructure);
+    const stateWithProducts = updateProductSlot(
+      updateProductSlot(savedState, "A00", 1, 0, 1, {
+        imagePath: "assets/products/kept.png",
+        name: "kept",
+        code: "KEEP",
+      }),
+      "A00",
+      1,
+      2,
+      1,
+      {
+        imagePath: "assets/products/removed.png",
+        name: "removed",
+        code: "DROP",
+      },
+    );
+
+    const appliedState = applyCabinetTemplate(
+      stateWithProducts,
+      "A00",
+      1,
+      savedState.cabinetTemplates[0].id,
+    );
+    const appliedSlots = appliedState.cabinetGroups.A00.cabinets[0].slots;
+
+    expect(appliedSlots).toHaveLength(3);
+    expect(appliedSlots.find((slot) => slot.layerIndex === 0 && slot.slotIndex === 1)).toEqual({
+      layerIndex: 0,
+      slotIndex: 1,
+      imagePath: "assets/products/kept.png",
+      name: "kept",
+      code: "KEEP",
+    });
+    expect(appliedSlots.find((slot) => slot.name === "removed")).toBeUndefined();
+  });
 });
 
 describe("project state product slot editing", () => {
