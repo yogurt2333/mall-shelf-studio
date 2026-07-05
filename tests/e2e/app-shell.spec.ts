@@ -105,6 +105,17 @@ test("template editing changes only the current cabinet", async ({ page }) => {
   await expect(page.getByLabel("第 1 层层高")).toHaveValue("28");
 });
 
+test("template editor bounds slot count edits so the page stays usable", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "选择货柜组 A00" }).click();
+  await page.getByRole("button", { name: "编辑模板" }).click();
+  await page.getByLabel("第 1 层格子").fill("999");
+
+  await expect(page.getByRole("heading", { name: "编辑货柜模板" })).toBeVisible();
+  await expect(page.getByLabel("第 1 层格子")).toHaveValue("12");
+});
+
 test("saves and applies a single-cabinet template from the template library", async ({ page }) => {
   await page.goto("/");
 

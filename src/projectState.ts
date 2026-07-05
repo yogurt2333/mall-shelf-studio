@@ -55,6 +55,9 @@ export type CabinetTemplate = {
   structure: CabinetStructure;
 };
 
+const MIN_LAYER_SLOT_COUNT = 1;
+const MAX_LAYER_SLOT_COUNT = 12;
+
 export type ProjectState = {
   floorPlan: {
     imagePath: string;
@@ -116,7 +119,7 @@ export function saveCabinetTemplate(
       {
         id: createCabinetTemplateId(state.cabinetTemplates.length + 1),
         name: templateName,
-        structure: cloneCabinetStructure(structure),
+        structure: normalizeCabinetStructure(structure),
       },
     ],
   };
@@ -160,6 +163,16 @@ function cloneCabinetStructure(structure: CabinetStructure): CabinetStructure {
   };
 }
 
+function normalizeCabinetStructure(structure: CabinetStructure): CabinetStructure {
+  return {
+    bottomBlankPercent: structure.bottomBlankPercent,
+    layers: structure.layers.map((layer) => ({
+      ...layer,
+      slotCount: clampInteger(layer.slotCount, MIN_LAYER_SLOT_COUNT, MAX_LAYER_SLOT_COUNT),
+    })),
+  };
+}
+
 export function createCabinets(cabinetCount: number): Cabinet[] {
   return Array.from({ length: clampInteger(cabinetCount, 1, 12) }, (_, index) => ({
     order: index + 1,
@@ -192,7 +205,7 @@ function createDefaultCabinetStructure(): CabinetStructure {
 }
 
 function createProductSlots(structure: CabinetStructure): ProductSlot[] {
-  return structure.layers.flatMap((layer, layerIndex) =>
+  return normalizeCabinetStructure(structure).layers.flatMap((layer, layerIndex) =>
     Array.from({ length: layer.slotCount }, (_, slotIndex) => ({
       layerIndex,
       slotIndex,
@@ -226,6 +239,8 @@ export function updateCabinetStructure(
     return state;
   }
 
+  const normalizedStructure = normalizeCabinetStructure(structure);
+
   return {
     ...state,
     cabinetGroups: {
@@ -237,8 +252,8 @@ export function updateCabinetStructure(
           cabinet.order === cabinetOrder
             ? {
                 ...cabinet,
-                structure,
-                slots: createProductSlots(structure),
+                structure: normalizedStructure,
+                slots: createProductSlots(normalizedStructure),
               }
             : cabinet,
         ),

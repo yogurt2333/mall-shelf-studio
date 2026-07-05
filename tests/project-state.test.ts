@@ -76,6 +76,18 @@ describe("project state cabinet structure editing", () => {
     expect(updatedState.cabinetGroups.A00.cabinets[1].structure.layers).toHaveLength(3);
   });
 
+  test("bounds product slot counts before generating cabinet slots", () => {
+    const state = createInitialProjectState();
+
+    const updatedState = updateCabinetStructure(state, "A00", 1, {
+      layers: [{ heightPercent: 50, gapAfterPercent: 0, slotCount: 999 }],
+      bottomBlankPercent: 50,
+    });
+
+    expect(updatedState.cabinetGroups.A00.cabinets[0].structure.layers[0].slotCount).toBe(12);
+    expect(updatedState.cabinetGroups.A00.cabinets[0].slots).toHaveLength(12);
+  });
+
   test("validates cabinet layer height and spacing budget", () => {
     expect(
       validateCabinetStructure({

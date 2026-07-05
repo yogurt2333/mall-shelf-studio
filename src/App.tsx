@@ -435,6 +435,7 @@ export function App() {
                       第 {layerIndex + 1} 层格子
                       <input
                         aria-label={`第 ${layerIndex + 1} 层格子`}
+                        max="12"
                         min="1"
                         onChange={(event) =>
                           updateEditingLayer(layerIndex, "slotCount", Number(event.currentTarget.value))
