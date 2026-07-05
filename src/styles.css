@@ -648,6 +648,25 @@ h2 {
   padding: 8px 10px;
 }
 
+.export-feedback {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  display: grid;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 10px 12px;
+}
+
+.export-feedback p {
+  color: inherit;
+  line-height: 1.35;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .calibration-card {
   border: 1px solid #d5dce7;
   margin-bottom: 18px;

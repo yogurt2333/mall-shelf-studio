@@ -319,6 +319,48 @@ export function clearProductSlot(
   });
 }
 
+export function createParallelViewExportPath(cabinetGroupId: string, date: Date) {
+  const year = date.getFullYear().toString();
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  const hour = date.getHours().toString().padStart(2, "0");
+  const minute = date.getMinutes().toString().padStart(2, "0");
+
+  return `exports/${cabinetGroupId}_${year}${month}${day}_${hour}${minute}.png`;
+}
+
+export function countEmptyProductSlots(cabinetGroup: ProjectStateCabinetGroup) {
+  return cabinetGroup.cabinets.reduce(
+    (emptyCount, cabinet) =>
+      emptyCount +
+      cabinet.slots.filter((slot) => !slot.imagePath && !slot.name.trim() && !slot.code.trim()).length,
+    0,
+  );
+}
+
+export function markParallelViewExported(
+  state: ProjectState,
+  cabinetGroupId: string,
+  exportPath: string,
+): ProjectState {
+  const cabinetGroup = state.cabinetGroups[cabinetGroupId];
+
+  if (!cabinetGroup) {
+    return state;
+  }
+
+  return {
+    ...state,
+    cabinetGroups: {
+      ...state.cabinetGroups,
+      [cabinetGroupId]: {
+        ...cabinetGroup,
+        lastExportPath: exportPath,
+      },
+    },
+  };
+}
+
 export function validateCabinetStructure(
   structure: CabinetStructure,
 ): CabinetStructureValidation {

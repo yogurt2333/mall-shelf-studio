@@ -5,6 +5,9 @@ import {
   deleteCabinetTemplate,
   saveCabinetTemplate,
   clearProductSlot,
+  countEmptyProductSlots,
+  createParallelViewExportPath,
+  markParallelViewExported,
   setCabinetGroupLocked,
   updateProductSlot,
   updateCabinetStructure,
@@ -189,5 +192,32 @@ describe("project state product slot editing", () => {
       name: "",
       code: "",
     });
+  });
+});
+
+describe("project state parallel view export", () => {
+  test("creates a relative PNG export path from cabinet group id and date", () => {
+    expect(createParallelViewExportPath("A00", new Date("2026-07-04T15:30:00"))).toBe(
+      "exports/A00_20260704_1530.png",
+    );
+  });
+
+  test("marks a cabinet group's latest exported PNG path", () => {
+    const state = createInitialProjectState();
+
+    const updatedState = markParallelViewExported(state, "A00", "exports/A00_20260704_1530.png");
+
+    expect(updatedState.cabinetGroups.A00.lastExportPath).toBe("exports/A00_20260704_1530.png");
+    expect(updatedState.cabinetGroups.A01.lastExportPath).toBeNull();
+  });
+
+  test("counts empty product slots for one cabinet group", () => {
+    const state = updateProductSlot(createInitialProjectState(), "A00", 1, 0, 1, {
+      imagePath: "assets/products/bag.png",
+      name: "女款休闲包",
+      code: "MEFBCOA52",
+    });
+
+    expect(countEmptyProductSlots(state.cabinetGroups.A00)).toBe(23);
   });
 });

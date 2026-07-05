@@ -3,7 +3,10 @@ import { floorPlanConfig, getCabinetGroupStatusLabel } from "./floorPlanConfig";
 import {
   applyCabinetTemplate,
   clearProductSlot,
+  countEmptyProductSlots,
+  createParallelViewExportPath,
   deleteCabinetTemplate,
+  markParallelViewExported,
   saveCabinetTemplate,
   selectCabinetGroup,
   setCabinetGroupLocked,
@@ -14,6 +17,7 @@ import {
   validateCabinetStructure,
   type CabinetStructure,
   type CabinetGroupPosition,
+  type ProjectStateCabinetGroup,
   type ProductSlot,
 } from "./projectState";
 import { useBrowserProjectState } from "./useBrowserProjectState";
@@ -29,6 +33,11 @@ type DragState = {
 };
 
 type ProductSlotSelection = Pick<ProductSlot, "layerIndex" | "slotIndex">;
+
+type ExportFeedback = {
+  emptySlotCount: number;
+  path: string;
+};
 
 function normalizeCabinetCount(value: number) {
   if (!Number.isFinite(value)) {
@@ -69,6 +78,7 @@ export function App() {
     slotIndex: 0,
   });
   const [isFullPreviewOpen, setIsFullPreviewOpen] = useState(false);
+  const [exportFeedback, setExportFeedback] = useState<ExportFeedback | null>(null);
   const [templateName, setTemplateName] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [cabinetCountDrafts, setCabinetCountDrafts] = useState<Record<string, string>>({});
@@ -97,6 +107,7 @@ export function App() {
     setEditingCabinetIndex(0);
     setSelectedProductSlot({ layerIndex: 0, slotIndex: 0 });
     setIsFullPreviewOpen(false);
+    setExportFeedback(null);
     setActiveView("main");
   }, [projectState.selectedCabinetGroupId]);
 
@@ -413,6 +424,23 @@ export function App() {
     setSelectedTemplateId((currentTemplateId) =>
       currentTemplateId === templateId ? "" : currentTemplateId,
     );
+  }
+
+  function saveSelectedParallelView() {
+    if (!selectedGroup || !selectedGroupState) {
+      return;
+    }
+
+    const exportPath = createParallelViewExportPath(selectedGroup.id, new Date());
+    const emptySlotCount = countEmptyProductSlots(selectedGroupState);
+    const pngUrl = renderParallelViewPng(selectedGroup.id, selectedGroup.name, selectedGroupState);
+    const downloadLink = document.createElement("a");
+
+    downloadLink.href = pngUrl;
+    downloadLink.download = exportPath.split("/").pop() ?? `${selectedGroup.id}.png`;
+    downloadLink.click();
+    setProjectState((state) => markParallelViewExported(state, selectedGroup.id, exportPath));
+    setExportFeedback({ emptySlotCount, path: exportPath });
   }
 
   return (
@@ -867,8 +895,21 @@ export function App() {
               <button onClick={() => setIsFullPreviewOpen(true)} type="button">
                 显示全量并联图
               </button>
-              <button type="button">保存并联图</button>
+              <button onClick={saveSelectedParallelView} type="button">
+                保存并联图
+              </button>
             </div>
+            {exportFeedback ? (
+              <div className="export-feedback" role="status">
+                <p>{`已导出，仍有 ${exportFeedback.emptySlotCount} 个空商品位`}</p>
+                <p>{exportFeedback.path}</p>
+              </div>
+            ) : selectedGroupState.lastExportPath ? (
+              <div className="export-feedback" role="status">
+                <p>最近导出</p>
+                <p>{selectedGroupState.lastExportPath}</p>
+              </div>
+            ) : null}
             {isCalibrationMode ? (
               <section className="calibration-card" aria-labelledby="calibration-title">
                 <div className="calibration-card-header">
@@ -1042,4 +1083,91 @@ export function App() {
       ) : null}
     </main>
   );
+}
+
+function renderParallelViewPng(
+  cabinetGroupId: string,
+  cabinetGroupName: string,
+  cabinetGroup: ProjectStateCabinetGroup,
+) {
+  const cabinetWidth = 180;
+  const cabinetHeight = 290;
+  const gap = 10;
+  const padding = 24;
+  const titleHeight = 40;
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  canvas.width = padding * 2 + cabinetGroup.cabinets.length * cabinetWidth + (cabinetGroup.cabinets.length - 1) * gap;
+  canvas.height = padding * 2 + titleHeight + cabinetHeight;
+
+  if (!context) {
+    return "";
+  }
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = "#111827";
+  context.font = "700 20px Arial";
+  context.fillText(`${cabinetGroupId} ${cabinetGroupName}`, padding, padding + 22);
+
+  cabinetGroup.cabinets.forEach((cabinet, cabinetIndex) => {
+    const left = padding + cabinetIndex * (cabinetWidth + gap);
+    const top = padding + titleHeight;
+
+    context.fillStyle = "#30343b";
+    context.fillRect(left, top, cabinetWidth, 24);
+    context.fillStyle = "#ffffff";
+    context.font = "700 12px Arial";
+    context.fillText(`${cabinetGroupId}-${cabinet.order}`, left + 8, top + 16);
+    context.strokeStyle = "#30343b";
+    context.lineWidth = 2;
+    context.strokeRect(left, top, cabinetWidth, cabinetHeight);
+
+    const bodyTop = top + 24;
+    const bodyHeight = cabinetHeight - 24;
+    let layerTop = bodyTop;
+    const usedPercent = cabinet.structure.layers.reduce(
+      (total, layer) => total + layer.heightPercent + layer.gapAfterPercent,
+      0,
+    );
+    const scale = bodyHeight / Math.max(100, usedPercent);
+
+    cabinet.structure.layers.forEach((layer, layerIndex) => {
+      const layerHeight = Math.max(24, layer.heightPercent * scale);
+      const slotWidth = cabinetWidth / layer.slotCount;
+
+      for (let slotIndex = 0; slotIndex < layer.slotCount; slotIndex += 1) {
+        const slot = cabinet.slots.find(
+          (productSlot) =>
+            productSlot.layerIndex === layerIndex && productSlot.slotIndex === slotIndex,
+        );
+        const slotLeft = left + slotIndex * slotWidth;
+
+        context.fillStyle = "#f8fafc";
+        context.fillRect(slotLeft, layerTop, slotWidth, layerHeight);
+        context.strokeStyle = "#d8dee8";
+        context.lineWidth = 1;
+        context.strokeRect(slotLeft, layerTop, slotWidth, layerHeight);
+
+        if (slot?.name) {
+          context.fillStyle = "#111827";
+          context.font = "700 9px Arial";
+          context.fillText(slot.name, slotLeft + 4, layerTop + layerHeight - 20, slotWidth - 8);
+        }
+
+        if (slot?.code) {
+          context.fillStyle = "#1557b0";
+          context.font = "700 9px Arial";
+          context.fillText(slot.code, slotLeft + 4, layerTop + layerHeight - 8, slotWidth - 8);
+        }
+      }
+
+      context.fillStyle = "#2f2f2f";
+      context.fillRect(left, layerTop + layerHeight, cabinetWidth, 4);
+      layerTop += layerHeight + layer.gapAfterPercent * scale;
+    });
+  });
+
+  return canvas.toDataURL("image/png");
 }

@@ -222,6 +222,16 @@ test("renders product image name and code in previews", async ({ page }) => {
   await expect(modalSlot.getByText("MEFBCOA52")).toBeVisible();
 });
 
+test("exports the selected cabinet group parallel view", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "选择货柜组 A00" }).click();
+  await page.getByRole("button", { name: "保存并联图" }).click();
+
+  await expect(page.getByText(/已导出，仍有 24 个空商品位/)).toBeVisible();
+  await expect(page.getByText(/exports\/A00_\d{8}_\d{4}\.png/)).toBeVisible();
+});
+
 test("auto-saves and restores the selected cabinet group", async ({ page }) => {
   await page.goto("/");
 
