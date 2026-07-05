@@ -6,6 +6,7 @@ import {
   countEmptyProductSlots,
   createParallelViewExportPath,
   deleteCabinetTemplate,
+  hasUnexportedCabinetGroupEdits,
   markParallelViewExported,
   saveCabinetTemplate,
   selectCabinetGroup,
@@ -38,6 +39,15 @@ type ExportFeedback = {
   emptySlotCount: number;
   path: string;
 };
+
+type LeaveIntent =
+  | {
+      type: "main";
+    }
+  | {
+      type: "selectCabinetGroup";
+      cabinetGroupId: string;
+    };
 
 function normalizeCabinetCount(value: number) {
   if (!Number.isFinite(value)) {
@@ -79,6 +89,7 @@ export function App() {
   });
   const [isFullPreviewOpen, setIsFullPreviewOpen] = useState(false);
   const [exportFeedback, setExportFeedback] = useState<ExportFeedback | null>(null);
+  const [pendingLeaveIntent, setPendingLeaveIntent] = useState<LeaveIntent | null>(null);
   const [templateName, setTemplateName] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [cabinetCountDrafts, setCabinetCountDrafts] = useState<Record<string, string>>({});
@@ -121,6 +132,23 @@ export function App() {
       [selectedGroupState.id]: String(selectedGroupState.cabinetCount),
     }));
   }, [selectedGroupState?.id, selectedGroupState?.cabinetCount]);
+
+  useEffect(() => {
+    function warnBeforeUnload(event: BeforeUnloadEvent) {
+      if (!selectedGroupState || !hasUnexportedCabinetGroupEdits(selectedGroupState)) {
+        return;
+      }
+
+      event.preventDefault();
+      event.returnValue = "";
+    }
+
+    window.addEventListener("beforeunload", warnBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", warnBeforeUnload);
+    };
+  }, [selectedGroupState]);
 
   useEffect(() => {
     function moveActiveDrag(event: globalThis.PointerEvent) {
@@ -426,6 +454,51 @@ export function App() {
     );
   }
 
+  function runLeaveIntent(intent: LeaveIntent) {
+    if (intent.type === "main") {
+      setActiveView("main");
+      return;
+    }
+
+    setProjectState((state) => selectCabinetGroup(state, intent.cabinetGroupId));
+  }
+
+  function requestLeaveCurrentCabinetGroup(intent: LeaveIntent) {
+    if (
+      selectedGroupState &&
+      hasUnexportedCabinetGroupEdits(selectedGroupState) &&
+      (intent.type !== "selectCabinetGroup" || intent.cabinetGroupId !== selectedGroupState.id)
+    ) {
+      setPendingLeaveIntent(intent);
+      return;
+    }
+
+    runLeaveIntent(intent);
+  }
+
+  function cancelPendingLeave() {
+    setPendingLeaveIntent(null);
+  }
+
+  function leaveWithoutExport() {
+    if (!pendingLeaveIntent) {
+      return;
+    }
+
+    runLeaveIntent(pendingLeaveIntent);
+    setPendingLeaveIntent(null);
+  }
+
+  function exportAndLeave() {
+    if (!pendingLeaveIntent) {
+      return;
+    }
+
+    saveSelectedParallelView();
+    runLeaveIntent(pendingLeaveIntent);
+    setPendingLeaveIntent(null);
+  }
+
   function saveSelectedParallelView() {
     if (!selectedGroup || !selectedGroupState) {
       return;
@@ -489,7 +562,12 @@ export function App() {
                     isCalibrationMode ? "is-calibrating" : ""
                   }`}
                   key={group.id}
-                  onClick={() => setProjectState((state) => selectCabinetGroup(state, group.id))}
+                  onClick={() =>
+                    requestLeaveCurrentCabinetGroup({
+                      type: "selectCabinetGroup",
+                      cabinetGroupId: group.id,
+                    })
+                  }
                   onMouseDown={(event) => startMouseDrag(event, group.id, "move")}
                   onPointerDown={(event) => startDrag(event, group.id, "move")}
                   style={{
@@ -520,7 +598,11 @@ export function App() {
         <p className="eyebrow">货柜组</p>
         {selectedGroup && selectedGroupState && activeView === "templateEditor" && editingCabinet ? (
           <>
-            <button className="text-button" onClick={() => setActiveView("main")} type="button">
+            <button
+              className="text-button"
+              onClick={() => requestLeaveCurrentCabinetGroup({ type: "main" })}
+              type="button"
+            >
               返回主页
             </button>
             <h2>编辑货柜模板</h2>
@@ -694,7 +776,11 @@ export function App() {
           editingCabinet &&
           selectedProductSlotState ? (
           <>
-            <button className="text-button" onClick={() => setActiveView("main")} type="button">
+            <button
+              className="text-button"
+              onClick={() => requestLeaveCurrentCabinetGroup({ type: "main" })}
+              type="button"
+            >
               返回主页
             </button>
             <h2>编辑商品位</h2>
@@ -1017,6 +1103,35 @@ export function App() {
           </>
         )}
       </aside>
+      {pendingLeaveIntent ? (
+        <div className="modal-backdrop">
+          <section
+            aria-labelledby="unexported-edits-title"
+            aria-modal="true"
+            className="leave-confirm-modal"
+            role="dialog"
+          >
+            <div className="leave-confirm-content">
+              <p className="eyebrow">离开前确认</p>
+              <h2 id="unexported-edits-title">当前货柜组还没有保存并联图</h2>
+              <p>
+                JSON 已自动保存，但这个货柜组的最新陈列还没有导出 PNG。离开前可以先保存并联图，或直接离开。
+              </p>
+            </div>
+            <div className="leave-confirm-actions">
+              <button onClick={exportAndLeave} type="button">
+                保存并联图后离开
+              </button>
+              <button onClick={leaveWithoutExport} type="button">
+                不保存并联图直接离开
+              </button>
+              <button className="text-button" onClick={cancelPendingLeave} type="button">
+                取消
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
       {selectedGroup && selectedGroupState && isFullPreviewOpen ? (
         <div className="modal-backdrop">
           <section

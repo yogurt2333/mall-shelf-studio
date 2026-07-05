@@ -775,6 +775,49 @@ h2 {
   padding: 8px 10px;
 }
 
+.leave-confirm-modal {
+  background: #ffffff;
+  border: 1px solid #c7d2e2;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
+  max-width: 520px;
+  padding: 18px;
+  width: min(520px, calc(100vw - 56px));
+}
+
+.leave-confirm-content h2 {
+  font-size: 20px;
+  margin: 4px 0 10px;
+}
+
+.leave-confirm-content p:last-child {
+  color: #516075;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.leave-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.leave-confirm-actions button {
+  background: #1557b0;
+  border: 1px solid #1557b0;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 12px;
+}
+
+.leave-confirm-actions .text-button {
+  background: #ffffff;
+  color: #1557b0;
+}
+
 .full-parallel-scroll {
   border: 1px solid #d5dce7;
   overflow-x: auto;

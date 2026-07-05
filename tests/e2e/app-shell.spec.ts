@@ -208,6 +208,7 @@ test("renders product image name and code in previews", async ({ page }) => {
   await page.getByLabel("名称").fill("女款休闲包");
   await page.getByLabel("编码").fill("MEFBCOA52");
   await page.getByRole("button", { name: "返回主页" }).click();
+  await page.getByRole("button", { name: "不保存并联图直接离开" }).click();
 
   const mainPreviewSlot = page.getByLabel("A00-1 第1层第2格");
   await expect(mainPreviewSlot.getByRole("img", { name: "女款休闲包" })).toBeVisible();
@@ -241,6 +242,7 @@ test("shows cabinet group status transitions after edit and export", async ({ pa
   await page.getByRole("button", { name: "编辑商品位" }).click();
   await page.getByLabel("名称").fill("女款休闲包");
   await page.getByRole("button", { name: "返回主页" }).click();
+  await page.getByRole("button", { name: "不保存并联图直接离开" }).click();
   await expect(page.locator(".cabinet-group-details dd").filter({ hasText: "编辑中" })).toBeVisible();
 
   await page.getByRole("button", { name: "保存并联图" }).click();
@@ -249,7 +251,46 @@ test("shows cabinet group status transitions after edit and export", async ({ pa
   await page.getByRole("button", { name: "编辑商品位" }).click();
   await page.getByLabel("编码").fill("MEFBCOA52");
   await page.getByRole("button", { name: "返回主页" }).click();
+  await page.getByRole("button", { name: "不保存并联图直接离开" }).click();
   await expect(page.locator(".cabinet-group-details dd").filter({ hasText: "编辑中" })).toBeVisible();
+});
+
+test("cancels leaving a product editor with unexported edits", async ({ page }) => {
+  await page.goto("/");
+
+  await page.locator("button[aria-label$='A00']").click();
+  await page.locator(".selection-actions button").nth(1).click();
+  await page.locator(".product-slot-editor input").nth(1).fill("bag");
+  await page.locator(".selection-panel > .text-button").click();
+
+  const dialog = page.getByRole("dialog", { name: "当前货柜组还没有保存并联图" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "取消" }).click();
+
+  await expect(dialog).toBeHidden();
+  await expect(page.locator(".product-editor-layout")).toBeVisible();
+  await expect(page.locator(".product-slot-editor input").nth(1)).toHaveValue("bag");
+});
+
+test("leaves without export when selecting another cabinet group", async ({ page }) => {
+  await page.goto("/");
+
+  await page.locator("button[aria-label$='A00']").click();
+  await page.locator(".selection-actions button").nth(1).click();
+  await page.locator(".product-slot-editor input").nth(1).fill("bag");
+  await page.locator("button[aria-label$='A01']").click();
+
+  const dialog = page.getByRole("dialog", { name: "当前货柜组还没有保存并联图" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "不保存并联图直接离开" }).click();
+
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole("heading", { name: /^A01 / })).toBeVisible();
+
+  await page.locator("button[aria-label$='A00']").click();
+  await page.locator(".selection-actions button").nth(1).click();
+
+  await expect(page.locator(".product-slot-editor input").nth(1)).toHaveValue("bag");
 });
 
 test("auto-saves and restores the selected cabinet group", async ({ page }) => {

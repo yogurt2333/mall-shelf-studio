@@ -7,6 +7,7 @@ import {
   clearProductSlot,
   countEmptyProductSlots,
   createParallelViewExportPath,
+  hasUnexportedCabinetGroupEdits,
   markParallelViewExported,
   setCabinetGroupLocked,
   updateProductSlot,
@@ -225,6 +226,23 @@ describe("project state parallel view export", () => {
 
     expect(updatedState.cabinetGroups.A00.status).toBe("inProgress");
     expect(updatedState.cabinetGroups.A00.lastExportPath).toBe("exports/A00_20260704_1530.png");
+  });
+
+  test("detects cabinet groups with edits that have not been exported to PNG", () => {
+    const editedState = updateProductSlot(createInitialProjectState(), "A00", 1, 0, 1, {
+      name: "bag",
+    });
+    const exportedState = markParallelViewExported(
+      editedState,
+      "A00",
+      "exports/A00_20260704_1530.png",
+    );
+
+    expect(hasUnexportedCabinetGroupEdits(editedState.cabinetGroups.A00)).toBe(true);
+    expect(hasUnexportedCabinetGroupEdits(exportedState.cabinetGroups.A00)).toBe(false);
+    expect(hasUnexportedCabinetGroupEdits(createInitialProjectState().cabinetGroups.A00)).toBe(
+      false,
+    );
   });
 
   test("counts empty product slots for one cabinet group", () => {

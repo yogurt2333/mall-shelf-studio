@@ -338,6 +338,10 @@ export function countEmptyProductSlots(cabinetGroup: ProjectStateCabinetGroup) {
   );
 }
 
+export function hasUnexportedCabinetGroupEdits(cabinetGroup: ProjectStateCabinetGroup) {
+  return cabinetGroup.status === "inProgress";
+}
+
 export function markParallelViewExported(
   state: ProjectState,
   cabinetGroupId: string,
