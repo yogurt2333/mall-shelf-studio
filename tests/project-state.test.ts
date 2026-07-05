@@ -208,7 +208,23 @@ describe("project state parallel view export", () => {
     const updatedState = markParallelViewExported(state, "A00", "exports/A00_20260704_1530.png");
 
     expect(updatedState.cabinetGroups.A00.lastExportPath).toBe("exports/A00_20260704_1530.png");
+    expect(updatedState.cabinetGroups.A00.status).toBe("saved");
     expect(updatedState.cabinetGroups.A01.lastExportPath).toBeNull();
+  });
+
+  test("moves a saved cabinet group back to in progress after product edits", () => {
+    const state = markParallelViewExported(
+      createInitialProjectState(),
+      "A00",
+      "exports/A00_20260704_1530.png",
+    );
+
+    const updatedState = updateProductSlot(state, "A00", 1, 0, 1, {
+      name: "女款休闲包",
+    });
+
+    expect(updatedState.cabinetGroups.A00.status).toBe("inProgress");
+    expect(updatedState.cabinetGroups.A00.lastExportPath).toBe("exports/A00_20260704_1530.png");
   });
 
   test("counts empty product slots for one cabinet group", () => {

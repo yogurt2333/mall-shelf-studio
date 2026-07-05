@@ -232,6 +232,26 @@ test("exports the selected cabinet group parallel view", async ({ page }) => {
   await expect(page.getByText(/exports\/A00_\d{8}_\d{4}\.png/)).toBeVisible();
 });
 
+test("shows cabinet group status transitions after edit and export", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "选择货柜组 A00" }).click();
+  await expect(page.locator(".cabinet-group-details dd").filter({ hasText: "未编辑" })).toBeVisible();
+
+  await page.getByRole("button", { name: "编辑商品位" }).click();
+  await page.getByLabel("名称").fill("女款休闲包");
+  await page.getByRole("button", { name: "返回主页" }).click();
+  await expect(page.locator(".cabinet-group-details dd").filter({ hasText: "编辑中" })).toBeVisible();
+
+  await page.getByRole("button", { name: "保存并联图" }).click();
+  await expect(page.locator(".cabinet-group-details dd").filter({ hasText: "已保存" })).toBeVisible();
+
+  await page.getByRole("button", { name: "编辑商品位" }).click();
+  await page.getByLabel("编码").fill("MEFBCOA52");
+  await page.getByRole("button", { name: "返回主页" }).click();
+  await expect(page.locator(".cabinet-group-details dd").filter({ hasText: "编辑中" })).toBeVisible();
+});
+
 test("auto-saves and restores the selected cabinet group", async ({ page }) => {
   await page.goto("/");
 

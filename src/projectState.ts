@@ -356,6 +356,7 @@ export function markParallelViewExported(
       [cabinetGroupId]: {
         ...cabinetGroup,
         lastExportPath: exportPath,
+        status: "saved",
       },
     },
   };
