@@ -25,6 +25,14 @@ type DragState = {
   startPosition: CabinetGroupPosition;
 };
 
+function normalizeCabinetCount(value: number) {
+  if (!Number.isFinite(value)) {
+    return 1;
+  }
+
+  return Math.min(12, Math.max(1, Math.round(value)));
+}
+
 export function App() {
   const { projectState, saveStatus, setProjectState } = useBrowserProjectState();
   const [isCalibrationMode, setIsCalibrationMode] = useState(false);
@@ -33,6 +41,7 @@ export function App() {
   const [editingCabinetIndex, setEditingCabinetIndex] = useState(0);
   const [templateName, setTemplateName] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [cabinetCountDrafts, setCabinetCountDrafts] = useState<Record<string, string>>({});
   const dragState = useRef<DragState | null>(null);
   const floorPlanCanvasRef = useRef<HTMLDivElement | null>(null);
   const selectedGroup = floorPlanConfig.cabinetGroups.find(
@@ -53,6 +62,17 @@ export function App() {
     setEditingCabinetIndex(0);
     setActiveView("main");
   }, [projectState.selectedCabinetGroupId]);
+
+  useEffect(() => {
+    if (!selectedGroupState) {
+      return;
+    }
+
+    setCabinetCountDrafts((drafts) => ({
+      ...drafts,
+      [selectedGroupState.id]: String(selectedGroupState.cabinetCount),
+    }));
+  }, [selectedGroupState?.id, selectedGroupState?.cabinetCount]);
 
   useEffect(() => {
     function moveActiveDrag(event: globalThis.PointerEvent) {
@@ -170,6 +190,48 @@ export function App() {
         [field]: value,
       }),
     );
+  }
+
+  function updateSelectedCabinetCountDraft(value: string) {
+    if (!selectedGroupState) {
+      return;
+    }
+
+    setCabinetCountDrafts((drafts) => ({
+      ...drafts,
+      [selectedGroupState.id]: value,
+    }));
+
+    if (!value.trim()) {
+      return;
+    }
+
+    const cabinetCount = normalizeCabinetCount(Number(value));
+
+    setProjectState((state) =>
+      updateCabinetGroupCabinetCount(state, selectedGroupState.id, cabinetCount),
+    );
+    setPreviewStartIndex((index) => Math.min(index, Math.max(0, cabinetCount - 2)));
+    setEditingCabinetIndex((index) => Math.min(index, cabinetCount - 1));
+  }
+
+  function commitSelectedCabinetCountDraft() {
+    if (!selectedGroupState) {
+      return;
+    }
+
+    const draft = cabinetCountDrafts[selectedGroupState.id] ?? String(selectedGroupState.cabinetCount);
+    const cabinetCount = normalizeCabinetCount(Number(draft));
+
+    setCabinetCountDrafts((drafts) => ({
+      ...drafts,
+      [selectedGroupState.id]: String(cabinetCount),
+    }));
+    setProjectState((state) =>
+      updateCabinetGroupCabinetCount(state, selectedGroupState.id, cabinetCount),
+    );
+    setPreviewStartIndex((index) => Math.min(index, Math.max(0, cabinetCount - 2)));
+    setEditingCabinetIndex((index) => Math.min(index, cabinetCount - 1));
   }
 
   function showPreviousPreviewCabinets() {
@@ -616,21 +678,23 @@ export function App() {
                   <label htmlFor="cabinet-count-input">
                     货柜数
                     <input
-                      defaultValue={selectedGroupState.cabinetCount}
                       id="cabinet-count-input"
-                      key={selectedGroupState.id}
                       min="1"
                       max="12"
-                      onBlur={(event) =>
-                        setProjectState((state) =>
-                          updateCabinetGroupCabinetCount(
-                            state,
-                            selectedGroupState.id,
-                            Number(event.currentTarget.value),
-                          ),
-                        )
+                      onBlur={commitSelectedCabinetCountDraft}
+                      onChange={(event) =>
+                        updateSelectedCabinetCountDraft(event.currentTarget.value)
                       }
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          commitSelectedCabinetCountDraft();
+                        }
+                      }}
                       type="number"
+                      value={
+                        cabinetCountDrafts[selectedGroupState.id] ??
+                        String(selectedGroupState.cabinetCount)
+                      }
                     />
                   </label>
                   <label>

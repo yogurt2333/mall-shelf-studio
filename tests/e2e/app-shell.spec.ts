@@ -180,6 +180,23 @@ test("calibrates selected cabinet group cabinet count", async ({ page }) => {
   await expect(cabinetCountInput).toHaveValue("4");
 });
 
+test("preview arrows remain usable after calibrating cabinet count", async ({ page }) => {
+  const pageErrors: Error[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error));
+
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "选择货柜组 A00" }).click();
+  await page.getByRole("button", { name: "校准货柜组" }).click();
+  const cabinetCountInput = page.getByLabel("货柜数");
+  await cabinetCountInput.fill("4");
+  await page.getByRole("button", { name: "下一组货柜" }).click();
+
+  await expect(page.getByText("A00-2")).toBeVisible();
+  await expect(page.getByText("A00-3")).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
+
 test("drags a non-first cabinet group marker", async ({ page }) => {
   await page.goto("/");
 
