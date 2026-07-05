@@ -71,6 +71,26 @@ test("browses the selected cabinet group preview two cabinets at a time", async 
   await expect(page.getByRole("button", { name: "上一组货柜" })).toBeEnabled();
 });
 
+test("opens and closes the full parallel view modal for the selected cabinet group", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "选择货柜组 A00" }).click();
+  await expect(page.getByText("A00-3")).toBeHidden();
+
+  await page.getByRole("button", { name: "显示全量并联图" }).click();
+
+  const modal = page.getByRole("dialog", { name: "A00 全量并联图" });
+  await expect(modal).toBeVisible();
+  await expect(modal.getByText("A00-1")).toBeVisible();
+  await expect(modal.getByText("A00-2")).toBeVisible();
+  await expect(modal.getByText("A00-3")).toBeVisible();
+
+  await modal.getByRole("button", { name: "关闭全量并联图" }).click();
+
+  await expect(modal).toBeHidden();
+  await expect(page.getByRole("heading", { name: "A00 中岛横向货柜组" })).toBeVisible();
+});
+
 test("opens single-cabinet template editing and validates layer budget", async ({ page }) => {
   await page.goto("/");
 

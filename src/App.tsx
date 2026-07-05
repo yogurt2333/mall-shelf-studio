@@ -48,6 +48,7 @@ export function App() {
     layerIndex: 0,
     slotIndex: 0,
   });
+  const [isFullPreviewOpen, setIsFullPreviewOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [cabinetCountDrafts, setCabinetCountDrafts] = useState<Record<string, string>>({});
@@ -75,6 +76,7 @@ export function App() {
     setPreviewStartIndex(0);
     setEditingCabinetIndex(0);
     setSelectedProductSlot({ layerIndex: 0, slotIndex: 0 });
+    setIsFullPreviewOpen(false);
     setActiveView("main");
   }, [projectState.selectedCabinetGroupId]);
 
@@ -836,7 +838,9 @@ export function App() {
               <button onClick={() => setActiveView("productEditor")} type="button">
                 编辑商品位
               </button>
-              <button type="button">显示全量并联图</button>
+              <button onClick={() => setIsFullPreviewOpen(true)} type="button">
+                显示全量并联图
+              </button>
               <button type="button">保存并联图</button>
             </div>
             {isCalibrationMode ? (
@@ -946,6 +950,60 @@ export function App() {
           </>
         )}
       </aside>
+      {selectedGroup && selectedGroupState && isFullPreviewOpen ? (
+        <div className="modal-backdrop">
+          <section
+            aria-labelledby="full-parallel-preview-title"
+            aria-modal="true"
+            className="full-parallel-modal"
+            role="dialog"
+          >
+            <div className="full-parallel-modal-header">
+              <div>
+                <p className="eyebrow">全量并联图</p>
+                <h2 id="full-parallel-preview-title">{`${selectedGroup.id} 全量并联图`}</h2>
+              </div>
+              <button
+                aria-label="关闭全量并联图"
+                onClick={() => setIsFullPreviewOpen(false)}
+                type="button"
+              >
+                关闭
+              </button>
+            </div>
+            <div className="full-parallel-scroll">
+              <div className="full-parallel-strip">
+                {selectedGroupState.cabinets.map((cabinet) => (
+                  <article className="cabinet-preview full-parallel-cabinet" key={cabinet.order}>
+                    <span className="cabinet-preview-label">{`${selectedGroup.id}-${cabinet.order}`}</span>
+                    <div className="cabinet-preview-body">
+                      {cabinet.structure.layers.map((layer, layerIndex) => (
+                        <div
+                          className="cabinet-preview-layer"
+                          key={`${cabinet.order}-${layerIndex}`}
+                          style={{
+                            flexGrow: layer.heightPercent,
+                          }}
+                        >
+                          {Array.from({ length: layer.slotCount }, (_, slotIndex) => (
+                            <div
+                              aria-label={`${selectedGroup.id}-${cabinet.order} 第${
+                                layerIndex + 1
+                              }层第${slotIndex + 1}格`}
+                              className="cabinet-preview-slot"
+                              key={slotIndex}
+                            />
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }
