@@ -198,6 +198,30 @@ test("edits and clears one product slot at a time", async ({ page }) => {
   await expect(page.getByLabel("编码")).toHaveValue("");
 });
 
+test("renders product image name and code in previews", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "选择货柜组 A00" }).click();
+  await page.getByRole("button", { name: "编辑商品位" }).click();
+  await page.getByRole("button", { name: "选择 A00-1 第1层第2格" }).click();
+  await page.getByLabel("图片路径").fill("/assets/products/sample-bag.svg");
+  await page.getByLabel("名称").fill("女款休闲包");
+  await page.getByLabel("编码").fill("MEFBCOA52");
+  await page.getByRole("button", { name: "返回主页" }).click();
+
+  const mainPreviewSlot = page.getByLabel("A00-1 第1层第2格");
+  await expect(mainPreviewSlot.getByRole("img", { name: "女款休闲包" })).toBeVisible();
+  await expect(mainPreviewSlot.getByText("女款休闲包")).toBeVisible();
+  await expect(mainPreviewSlot.getByText("MEFBCOA52")).toBeVisible();
+
+  await page.getByRole("button", { name: "显示全量并联图" }).click();
+  const modal = page.getByRole("dialog", { name: "A00 全量并联图" });
+  const modalSlot = modal.getByLabel("A00-1 第1层第2格");
+  await expect(modalSlot.getByRole("img", { name: "女款休闲包" })).toBeVisible();
+  await expect(modalSlot.getByText("女款休闲包")).toBeVisible();
+  await expect(modalSlot.getByText("MEFBCOA52")).toBeVisible();
+});
+
 test("auto-saves and restores the selected cabinet group", async ({ page }) => {
   await page.goto("/");
 

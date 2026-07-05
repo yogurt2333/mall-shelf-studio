@@ -331,7 +331,9 @@ h2 {
 .cabinet-preview-slot {
   background: #f1f3f6;
   border: 1px solid #d8dee8;
+  display: flex;
   min-width: 0;
+  overflow: hidden;
 }
 
 .selection-actions {
@@ -545,24 +547,44 @@ h2 {
   border: 2px solid #1557b0;
 }
 
-.product-image-path {
-  color: #7b8797;
-  font-size: 8px;
-  overflow-wrap: anywhere;
+.product-slot-content {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  padding: 2px;
+}
+
+.product-slot-image {
+  display: block;
+  flex: 1 1 auto;
+  max-height: 68%;
+  max-width: 100%;
+  min-height: 0;
+  object-fit: contain;
 }
 
 .product-name {
   color: #111827;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
+  line-height: 1.05;
   overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .product-code {
   color: #1557b0;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
+  line-height: 1.05;
   overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .product-slot-editor {

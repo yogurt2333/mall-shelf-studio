@@ -38,6 +38,26 @@ function normalizeCabinetCount(value: number) {
   return Math.min(12, Math.max(1, Math.round(value)));
 }
 
+function ProductSlotContents({ slot }: { slot?: ProductSlot }) {
+  if (!slot || (!slot.imagePath && !slot.name && !slot.code)) {
+    return null;
+  }
+
+  return (
+    <div className="product-slot-content">
+      {slot.imagePath ? (
+        <img
+          alt={slot.name || slot.code || "商品图片"}
+          className="product-slot-image"
+          src={slot.imagePath}
+        />
+      ) : null}
+      {slot.name ? <span className="product-name">{slot.name}</span> : null}
+      {slot.code ? <span className="product-code">{slot.code}</span> : null}
+    </div>
+  );
+}
+
 export function App() {
   const { projectState, saveStatus, setProjectState } = useBrowserProjectState();
   const [isCalibrationMode, setIsCalibrationMode] = useState(false);
@@ -700,11 +720,7 @@ export function App() {
                             onClick={() => setSelectedProductSlot({ layerIndex, slotIndex })}
                             type="button"
                           >
-                            {slot?.imagePath ? (
-                              <span className="product-image-path">{slot.imagePath}</span>
-                            ) : null}
-                            {slot?.name ? <span className="product-name">{slot.name}</span> : null}
-                            {slot?.code ? <span className="product-code">{slot.code}</span> : null}
+                            <ProductSlotContents slot={slot} />
                           </button>
                         );
                       })}
@@ -815,15 +831,25 @@ export function App() {
                             flexGrow: layer.heightPercent,
                           }}
                         >
-                          {Array.from({ length: layer.slotCount }, (_, slotIndex) => (
-                            <div
-                              aria-label={`${selectedGroup.id}-${cabinet.order} 第${
-                                layerIndex + 1
-                              }层第${slotIndex + 1}格`}
-                              className="cabinet-preview-slot"
-                              key={slotIndex}
-                            />
-                          ))}
+                          {Array.from({ length: layer.slotCount }, (_, slotIndex) => {
+                            const slot = cabinet.slots.find(
+                              (productSlot) =>
+                                productSlot.layerIndex === layerIndex &&
+                                productSlot.slotIndex === slotIndex,
+                            );
+
+                            return (
+                              <div
+                                aria-label={`${selectedGroup.id}-${cabinet.order} 第${
+                                  layerIndex + 1
+                                }层第${slotIndex + 1}格`}
+                                className="cabinet-preview-slot"
+                                key={slotIndex}
+                              >
+                                <ProductSlotContents slot={slot} />
+                              </div>
+                            );
+                          })}
                         </div>
                       ))}
                     </div>
@@ -985,15 +1011,25 @@ export function App() {
                             flexGrow: layer.heightPercent,
                           }}
                         >
-                          {Array.from({ length: layer.slotCount }, (_, slotIndex) => (
-                            <div
-                              aria-label={`${selectedGroup.id}-${cabinet.order} 第${
-                                layerIndex + 1
-                              }层第${slotIndex + 1}格`}
-                              className="cabinet-preview-slot"
-                              key={slotIndex}
-                            />
-                          ))}
+                          {Array.from({ length: layer.slotCount }, (_, slotIndex) => {
+                            const slot = cabinet.slots.find(
+                              (productSlot) =>
+                                productSlot.layerIndex === layerIndex &&
+                                productSlot.slotIndex === slotIndex,
+                            );
+
+                            return (
+                              <div
+                                aria-label={`${selectedGroup.id}-${cabinet.order} 第${
+                                  layerIndex + 1
+                                }层第${slotIndex + 1}格`}
+                                className="cabinet-preview-slot"
+                                key={slotIndex}
+                              >
+                                <ProductSlotContents slot={slot} />
+                              </div>
+                            );
+                          })}
                         </div>
                       ))}
                     </div>
