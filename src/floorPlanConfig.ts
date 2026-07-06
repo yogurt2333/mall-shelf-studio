@@ -29,7 +29,7 @@ function cabinetGroup(
 }
 
 export const floorPlanConfig = {
-  imagePath: "/assets/floorplan.jpg",
+  imagePath: "./assets/floorplan.jpg",
   imageAlt: "固定商场平面图",
   cabinetGroups: [
     cabinetGroup("A00", "中岛横向货柜组", 3, {
