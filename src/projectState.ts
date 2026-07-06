@@ -32,7 +32,10 @@ export type CabinetLayer = {
   heightPercent: number;
   gapAfterPercent: number;
   slotCount: number;
+  displayMode?: CabinetLayerDisplayMode;
 };
+
+export type CabinetLayerDisplayMode = "flat" | "hang";
 
 export type ProductSlot = {
   layerIndex: number;
@@ -210,6 +213,7 @@ function normalizeCabinetStructure(structure: CabinetStructure): CabinetStructur
     layers: structure.layers.map((layer) => ({
       ...layer,
       slotCount: clampInteger(layer.slotCount, MIN_LAYER_SLOT_COUNT, MAX_LAYER_SLOT_COUNT),
+      displayMode: layer.displayMode ?? "flat",
     })),
   };
 }
@@ -229,16 +233,19 @@ function createDefaultCabinetStructure(): CabinetStructure {
         heightPercent: 28,
         gapAfterPercent: 2,
         slotCount: 3,
+        displayMode: "flat",
       },
       {
         heightPercent: 28,
         gapAfterPercent: 2,
         slotCount: 3,
+        displayMode: "flat",
       },
       {
         heightPercent: 30,
         gapAfterPercent: 0,
         slotCount: 2,
+        displayMode: "flat",
       },
     ],
     bottomBlankPercent: 10,

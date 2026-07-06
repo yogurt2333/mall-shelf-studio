@@ -322,10 +322,22 @@ h2 {
   grid-auto-flow: column;
   grid-auto-columns: minmax(0, 1fr);
   min-height: 0;
+  position: relative;
 }
 
 .cabinet-preview-layer:last-child {
   border-bottom: 0;
+}
+
+.cabinet-preview-layer.is-hang::before {
+  background: #8d96a3;
+  content: "";
+  height: 4px;
+  left: 8px;
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 1;
 }
 
 .cabinet-preview-slot {
@@ -464,8 +476,41 @@ h2 {
 .layer-editor-row {
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-top: 10px;
+}
+
+.layer-display-mode-control {
+  color: #516075;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 4px;
+}
+
+.segmented-control {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.segmented-control button {
+  background: #ffffff;
+  border: 1px solid #c7d2e2;
+  color: #1557b0;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 8px 9px;
+}
+
+.segmented-control button + button {
+  border-left: 0;
+}
+
+.segmented-control button[aria-pressed="true"] {
+  background: #e8f2ff;
+  color: #0f55c8;
 }
 
 .validation-error,

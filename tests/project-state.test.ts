@@ -83,6 +83,19 @@ describe("project state cabinet structure editing", () => {
     expect(updatedState.cabinetGroups.A00.cabinets[1].structure.layers).toHaveLength(3);
   });
 
+  test("stores each cabinet layer display mode", () => {
+    const state = createInitialProjectState();
+
+    expect(state.cabinetGroups.A00.cabinets[0].structure.layers[0].displayMode).toBe("flat");
+
+    const updatedState = updateCabinetStructure(state, "A00", 1, {
+      layers: [{ heightPercent: 50, gapAfterPercent: 0, slotCount: 2, displayMode: "hang" }],
+      bottomBlankPercent: 50,
+    });
+
+    expect(updatedState.cabinetGroups.A00.cabinets[0].structure.layers[0].displayMode).toBe("hang");
+  });
+
   test("bounds product slot counts before generating cabinet slots", () => {
     const state = createInitialProjectState();
 
@@ -117,7 +130,7 @@ describe("project state cabinet template library", () => {
   test("saves and applies a copied cabinet template to one cabinet", () => {
     const state = createInitialProjectState();
     const customStructure = {
-      layers: [{ heightPercent: 50, gapAfterPercent: 0, slotCount: 2 }],
+      layers: [{ heightPercent: 50, gapAfterPercent: 0, slotCount: 2, displayMode: "flat" as const }],
       bottomBlankPercent: 50,
     };
 
@@ -138,7 +151,7 @@ describe("project state cabinet template library", () => {
   test("deleting a cabinet template does not change already applied cabinet structure", () => {
     const state = createInitialProjectState();
     const customStructure = {
-      layers: [{ heightPercent: 50, gapAfterPercent: 0, slotCount: 2 }],
+      layers: [{ heightPercent: 50, gapAfterPercent: 0, slotCount: 2, displayMode: "flat" as const }],
       bottomBlankPercent: 50,
     };
 

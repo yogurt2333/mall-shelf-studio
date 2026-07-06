@@ -18,6 +18,7 @@ import {
   updateCabinetGroupPosition,
   validateCabinetStructure,
   type CabinetStructure,
+  type CabinetLayerDisplayMode,
   type CabinetGroupPosition,
   type ProjectStateCabinetGroup,
   type ProductSlot,
@@ -395,6 +396,27 @@ export function App() {
     });
   }
 
+  function updateEditingLayerDisplayMode(
+    layerIndex: number,
+    displayMode: CabinetLayerDisplayMode,
+  ) {
+    if (!editingCabinet) {
+      return;
+    }
+
+    updateEditingCabinetStructure({
+      ...editingCabinet.structure,
+      layers: editingCabinet.structure.layers.map((layer, index) =>
+        index === layerIndex
+          ? {
+              ...layer,
+              displayMode,
+            }
+          : layer,
+      ),
+    });
+  }
+
   function showPreviousEditingCabinet() {
     setEditingCabinetIndex((index) => Math.max(0, index - 1));
     setSelectedProductSlot({ layerIndex: 0, slotIndex: 0 });
@@ -488,7 +510,7 @@ export function App() {
     const layers = [...editingCabinet.structure.layers];
 
     while (layers.length < nextLayerCount) {
-      layers.push({ heightPercent: 20, gapAfterPercent: 0, slotCount: 3 });
+      layers.push({ heightPercent: 20, gapAfterPercent: 0, slotCount: 3, displayMode: "flat" });
     }
 
     updateEditingCabinetStructure({
@@ -740,7 +762,9 @@ export function App() {
                 <div className="cabinet-preview-body">
                   {editingCabinet.structure.layers.map((layer, layerIndex) => (
                     <div
-                      className="cabinet-preview-layer"
+                      className={`cabinet-preview-layer ${
+                        layer.displayMode === "hang" ? "is-hang" : ""
+                      }`}
                       key={layerIndex}
                       style={{ flexGrow: layer.heightPercent }}
                     >
@@ -807,6 +831,25 @@ export function App() {
                         value={layer.slotCount}
                       />
                     </label>
+                    <div className="layer-display-mode-control">
+                      <span>{`第 ${layerIndex + 1} 层属性`}</span>
+                      <div className="segmented-control">
+                        <button
+                          aria-pressed={(layer.displayMode ?? "flat") === "flat"}
+                          onClick={() => updateEditingLayerDisplayMode(layerIndex, "flat")}
+                          type="button"
+                        >
+                          铺
+                        </button>
+                        <button
+                          aria-pressed={layer.displayMode === "hang"}
+                          onClick={() => updateEditingLayerDisplayMode(layerIndex, "hang")}
+                          type="button"
+                        >
+                          挂
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 ))}
                 <p className={editingValidation?.isValid ? "validation-ok" : "validation-error"}>
@@ -918,7 +961,9 @@ export function App() {
                 <div className="cabinet-preview-body">
                   {editingCabinet.structure.layers.map((layer, layerIndex) => (
                     <div
-                      className="cabinet-preview-layer"
+                      className={`cabinet-preview-layer ${
+                        layer.displayMode === "hang" ? "is-hang" : ""
+                      }`}
                       key={layerIndex}
                       style={{ flexGrow: layer.heightPercent }}
                     >
@@ -1052,7 +1097,9 @@ export function App() {
                     <div className="cabinet-preview-body">
                       {cabinet.structure.layers.map((layer, layerIndex) => (
                         <div
-                          className="cabinet-preview-layer"
+                          className={`cabinet-preview-layer ${
+                            layer.displayMode === "hang" ? "is-hang" : ""
+                          }`}
                           key={`${cabinet.order}-${layerIndex}`}
                           style={{
                             flexGrow: layer.heightPercent,
@@ -1300,7 +1347,9 @@ export function App() {
                     <div className="cabinet-preview-body">
                       {cabinet.structure.layers.map((layer, layerIndex) => (
                         <div
-                          className="cabinet-preview-layer"
+                          className={`cabinet-preview-layer ${
+                            layer.displayMode === "hang" ? "is-hang" : ""
+                          }`}
                           key={`${cabinet.order}-${layerIndex}`}
                           style={{
                             flexGrow: layer.heightPercent,
@@ -1415,6 +1464,11 @@ function renderParallelViewPng(
           context.font = "700 9px Arial";
           context.fillText(slot.code, slotLeft + 4, layerTop + layerHeight - 8, slotWidth - 8);
         }
+      }
+
+      if (layer.displayMode === "hang") {
+        context.fillStyle = "#8d96a3";
+        context.fillRect(left + 8, layerTop + 8, cabinetWidth - 16, 4);
       }
 
       context.fillStyle = "#2f2f2f";

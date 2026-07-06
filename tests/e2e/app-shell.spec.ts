@@ -152,6 +152,22 @@ test("template editor bounds slot count edits so the page stays usable", async (
   await expect(page.getByLabel("第 1 层格子")).toHaveValue("12");
 });
 
+test("template editor toggles a layer between flat and hanging display", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "选择货柜组 A00" }).click();
+  await page.getByRole("button", { name: "编辑模板" }).click();
+
+  const firstLayer = page.locator(".template-cabinet-preview .cabinet-preview-layer").first();
+  await expect(firstLayer).not.toHaveClass(/is-hang/);
+
+  await page.locator(".layer-display-mode-control").first().getByRole("button", { name: "挂" }).click();
+  await expect(firstLayer).toHaveClass(/is-hang/);
+
+  await page.locator(".layer-display-mode-control").first().getByRole("button", { name: "铺" }).click();
+  await expect(firstLayer).not.toHaveClass(/is-hang/);
+});
+
 test("saves and applies a single-cabinet template from the template library", async ({ page }) => {
   await page.goto("/");
 
