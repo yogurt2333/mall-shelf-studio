@@ -55,6 +55,7 @@ declare global {
         arrayBuffer: ArrayBuffer;
       }) => Promise<ProductImageImportResult>;
       loadProjectState?: () => Promise<unknown | null>;
+      resolveProjectAssetUrl?: (relativePath: string) => string;
       saveProjectState?: (projectState: unknown) => Promise<{ ok: true }>;
     };
   }
@@ -111,6 +112,29 @@ function ProductSlotContents({
       {slot.code ? <span className="product-code">{slot.code}</span> : null}
     </div>
   );
+}
+
+export function resolveProductImageSrc(
+  imagePath: string,
+  productImagePreviewUrls: Record<string, string>,
+  resolveProjectAssetUrl?: (relativePath: string) => string,
+) {
+  if (productImagePreviewUrls[imagePath]) {
+    return productImagePreviewUrls[imagePath];
+  }
+
+  if (resolveProjectAssetUrl && !imagePath.startsWith("/") && !imagePath.startsWith("blob:")) {
+    return resolveProjectAssetUrl(imagePath);
+  }
+
+  return imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
+}
+
+export function shouldWarnBeforeUnload(
+  selectedGroupState: ProjectStateCabinetGroup | null,
+  hasDesktopBridge: boolean,
+) {
+  return !hasDesktopBridge && !!selectedGroupState && hasUnexportedCabinetGroupEdits(selectedGroupState);
 }
 
 export function App() {
@@ -175,7 +199,7 @@ export function App() {
 
   useEffect(() => {
     function warnBeforeUnload(event: BeforeUnloadEvent) {
-      if (!selectedGroupState || !hasUnexportedCabinetGroupEdits(selectedGroupState)) {
+      if (!shouldWarnBeforeUnload(selectedGroupState, !!window.mallShelfStudio)) {
         return;
       }
 
@@ -497,8 +521,12 @@ export function App() {
     );
   }
 
-  function resolveProductImageSrc(imagePath: string) {
-    return productImagePreviewUrls[imagePath] ?? (imagePath.startsWith("/") ? imagePath : `/${imagePath}`);
+  function resolveProductImageSource(imagePath: string) {
+    return resolveProductImageSrc(
+      imagePath,
+      productImagePreviewUrls,
+      window.mallShelfStudio?.resolveProjectAssetUrl,
+    );
   }
 
   function updateEditingLayerCount(layerCount: number) {
@@ -988,7 +1016,7 @@ export function App() {
                             onClick={() => setSelectedProductSlot({ layerIndex, slotIndex })}
                             type="button"
                           >
-                            <ProductSlotContents resolveImageSrc={resolveProductImageSrc} slot={slot} />
+                            <ProductSlotContents resolveImageSrc={resolveProductImageSource} slot={slot} />
                           </button>
                         );
                       })}
@@ -1120,7 +1148,7 @@ export function App() {
                                 className="cabinet-preview-slot"
                                 key={slotIndex}
                               >
-                                <ProductSlotContents resolveImageSrc={resolveProductImageSrc} slot={slot} />
+                                <ProductSlotContents resolveImageSrc={resolveProductImageSource} slot={slot} />
                               </div>
                             );
                           })}
@@ -1370,7 +1398,7 @@ export function App() {
                                 className="cabinet-preview-slot"
                                 key={slotIndex}
                               >
-                                <ProductSlotContents resolveImageSrc={resolveProductImageSrc} slot={slot} />
+                                <ProductSlotContents resolveImageSrc={resolveProductImageSource} slot={slot} />
                               </div>
                             );
                           })}

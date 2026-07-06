@@ -1,6 +1,18 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, net, protocol } = require("electron");
 const { mkdir, readFile, writeFile } = require("node:fs/promises");
 const path = require("node:path");
+const { pathToFileURL } = require("node:url");
+
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: "mall-shelf-studio-asset",
+    privileges: {
+      secure: true,
+      standard: true,
+      supportFetchAPI: true,
+    },
+  },
+]);
 
 function createProductImageAssetPath(originalFileName, date, sequence) {
   const extension = originalFileName.match(/\.[a-z0-9]+$/i)?.[0].toLowerCase() ?? ".png";
@@ -18,6 +30,19 @@ function createProductImageAssetPath(originalFileName, date, sequence) {
 
 let productImageImportSequence = 0;
 const projectStatePath = path.join(process.cwd(), "project-state.json");
+const projectDirectory = process.cwd();
+
+function resolveProjectAssetPath(relativePath) {
+  const normalizedPath = path.normalize(relativePath).replace(/^(\.\.[/\\])+/, "");
+  const absolutePath = path.resolve(projectDirectory, normalizedPath);
+  const relativeFromProject = path.relative(projectDirectory, absolutePath);
+
+  if (relativeFromProject.startsWith("..") || path.isAbsolute(relativeFromProject)) {
+    throw new Error("Project asset path must stay inside the project directory.");
+  }
+
+  return absolutePath;
+}
 
 async function loadProjectStateFile() {
   try {
@@ -34,8 +59,8 @@ async function loadProjectStateFile() {
 }
 
 async function saveProjectStateFile(projectState) {
-  await mkdir(path.join(process.cwd(), "assets", "products"), { recursive: true });
-  await mkdir(path.join(process.cwd(), "exports"), { recursive: true });
+  await mkdir(path.join(projectDirectory, "assets", "products"), { recursive: true });
+  await mkdir(path.join(projectDirectory, "exports"), { recursive: true });
   await writeFile(projectStatePath, `${JSON.stringify(projectState, null, 2)}\n`, "utf8");
 }
 
@@ -55,13 +80,23 @@ ipcMain.handle("product-image:import", async (_event, file) => {
     new Date(),
     productImageImportSequence,
   );
-  const absolutePath = path.join(process.cwd(), relativePath);
+  const absolutePath = resolveProjectAssetPath(relativePath);
 
   await mkdir(path.dirname(absolutePath), { recursive: true });
   await writeFile(absolutePath, Buffer.from(file.arrayBuffer));
 
   return { relativePath };
 });
+
+function registerProjectAssetProtocol() {
+  protocol.handle("mall-shelf-studio-asset", (request) => {
+    const url = new URL(request.url);
+    const relativePath = decodeURIComponent(url.pathname.replace(/^\/+/, ""));
+    const absolutePath = resolveProjectAssetPath(relativePath);
+
+    return net.fetch(pathToFileURL(absolutePath).toString());
+  });
+}
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -87,6 +122,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  registerProjectAssetProtocol();
   createWindow();
 
   app.on("activate", () => {
