@@ -7,21 +7,23 @@
   "scripts": {
     "dev": "vite",
     "desktop": "npm run build && electron .",
+    "package:win": "npm run build && electron-packager . MallShelfStudio --platform=win32 --arch=x64 --out=release --overwrite --prune=true --ignore=release --ignore=test-results --ignore=playwright-report --ignore=.dev-server-current.log --ignore=.dev-server-current.err.log",
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "check": "npm run test && npm run build && npm run test:e2e"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^6.0.7",
-    "typescript": "^5.7.2",
-    "vitest": "^2.1.8",
     "@playwright/test": "^1.49.1",
+    "@vitejs/plugin-react": "^4.3.4",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8"
   },
   "devDependencies": {
+    "@electron/packager": "^20.0.2",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
