@@ -1,5 +1,5 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
-const { mkdir, writeFile } = require("node:fs/promises");
+const { mkdir, readFile, writeFile } = require("node:fs/promises");
 const path = require("node:path");
 
 function createProductImageAssetPath(originalFileName, date, sequence) {
@@ -17,6 +17,35 @@ function createProductImageAssetPath(originalFileName, date, sequence) {
 }
 
 let productImageImportSequence = 0;
+const projectStatePath = path.join(process.cwd(), "project-state.json");
+
+async function loadProjectStateFile() {
+  try {
+    const text = await readFile(projectStatePath, "utf8");
+
+    return JSON.parse(text);
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+async function saveProjectStateFile(projectState) {
+  await mkdir(path.join(process.cwd(), "assets", "products"), { recursive: true });
+  await mkdir(path.join(process.cwd(), "exports"), { recursive: true });
+  await writeFile(projectStatePath, `${JSON.stringify(projectState, null, 2)}\n`, "utf8");
+}
+
+ipcMain.handle("project-state:load", async () => loadProjectStateFile());
+
+ipcMain.handle("project-state:save", async (_event, projectState) => {
+  await saveProjectStateFile(projectState);
+
+  return { ok: true };
+});
 
 ipcMain.handle("product-image:import", async (_event, file) => {
   productImageImportSequence += 1;

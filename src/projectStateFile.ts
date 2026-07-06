@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { createInitialProjectState, type ProjectState } from "./projectState";
 
 export async function loadProjectState(path: string): Promise<ProjectState> {
@@ -17,6 +17,9 @@ export async function loadProjectState(path: string): Promise<ProjectState> {
 }
 
 export async function saveProjectState(path: string, state: ProjectState): Promise<void> {
-  await mkdir(dirname(path), { recursive: true });
+  const projectDirectory = dirname(path);
+
+  await mkdir(join(projectDirectory, "assets", "products"), { recursive: true });
+  await mkdir(join(projectDirectory, "exports"), { recursive: true });
   await writeFile(path, `${JSON.stringify(state, null, 2)}\n`, "utf8");
 }

@@ -1,5 +1,21 @@
 import { expect, test } from "@playwright/test";
 
+declare global {
+  interface Window {
+    __savedProjectStates: Array<{
+      cabinetGroups: {
+        A00: {
+          cabinets: Array<{
+            slots: Array<{
+              name: string;
+            }>;
+          }>;
+        };
+      };
+    }>;
+  }
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => window.localStorage.clear());
@@ -369,6 +385,60 @@ test("auto-saves and restores the selected cabinet group", async ({ page }) => {
     "aria-pressed",
     "true",
   );
+});
+
+test("loads and saves project state through the desktop bridge when available", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.clear();
+    window.__savedProjectStates = [];
+    window.mallShelfStudio = {
+      platform: "win32",
+      loadProjectState: async () => ({
+        selectedCabinetGroupId: "A00",
+        cabinetGroups: {
+          A00: {
+            status: "inProgress",
+          },
+        },
+      }),
+      saveProjectState: async (projectState) => {
+        window.__savedProjectStates.push(
+          projectState as {
+            cabinetGroups: {
+              A00: {
+                cabinets: Array<{
+                  slots: Array<{
+                    name: string;
+                  }>;
+                }>;
+              };
+            };
+          },
+        );
+
+        return { ok: true };
+      },
+    };
+  });
+
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { name: /^A00 / })).toBeVisible();
+  await expect(page.locator(".cabinet-group-details dd").filter({ hasText: "编辑中" })).toBeVisible();
+  await page.getByRole("button", { name: "编辑商品位" }).click();
+  await page.getByLabel("名称").fill("女款休闲包");
+
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          window.__savedProjectStates.some(
+            (projectState) =>
+              projectState.cabinetGroups.A00.cabinets[0].slots[0].name === "女款休闲包",
+          ),
+      ),
+    )
+    .toBe(true);
 });
 
 test("calibrates selected cabinet group cabinet count", async ({ page }) => {

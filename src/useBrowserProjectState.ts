@@ -49,15 +49,67 @@ function mergeWithFallbackState(savedState: ProjectState): ProjectState {
 export function useBrowserProjectState() {
   const [projectState, setProjectState] = useState<ProjectState>(() => loadBrowserProjectState());
   const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "failed">("idle");
+  const [isDesktopStateLoaded, setIsDesktopStateLoaded] = useState(false);
 
   useEffect(() => {
+    let isCancelled = false;
+
+    async function loadDesktopProjectState() {
+      try {
+        const desktopState = await window.mallShelfStudio?.loadProjectState?.();
+
+        if (!isCancelled && desktopState) {
+          setProjectState(mergeWithFallbackState(desktopState as ProjectState));
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsDesktopStateLoaded(true);
+        }
+      }
+    }
+
+    if (window.mallShelfStudio?.loadProjectState) {
+      void loadDesktopProjectState();
+      return () => {
+        isCancelled = true;
+      };
+    }
+
+    setIsDesktopStateLoaded(true);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktopStateLoaded) {
+      return;
+    }
+
     try {
       window.localStorage.setItem(projectStateStorageKey, JSON.stringify(projectState));
-      setSaveStatus("saved");
     } catch {
-      setSaveStatus("failed");
+      if (!window.mallShelfStudio?.saveProjectState) {
+        setSaveStatus("failed");
+        return;
+      }
     }
-  }, [projectState]);
+
+    async function saveProjectState() {
+      try {
+        if (window.mallShelfStudio?.saveProjectState) {
+          await window.mallShelfStudio.saveProjectState(projectState);
+        }
+
+        setSaveStatus("saved");
+      } catch {
+        setSaveStatus("failed");
+      }
+    }
+
+    void saveProjectState();
+  }, [isDesktopStateLoaded, projectState]);
 
   return {
     projectState,

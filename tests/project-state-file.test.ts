@@ -1,4 +1,4 @@
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdtemp, readFile, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
@@ -35,5 +35,15 @@ describe("project state file", () => {
       name: "中岛横向货柜组",
       cabinetCount: 3,
     });
+  });
+
+  test("creates local product asset and export directories beside the project state file", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "mall-shelf-studio-"));
+    const statePath = join(directory, "project-state.json");
+
+    await saveProjectState(statePath, createInitialProjectState());
+
+    expect((await stat(join(directory, "assets", "products"))).isDirectory()).toBe(true);
+    expect((await stat(join(directory, "exports"))).isDirectory()).toBe(true);
   });
 });

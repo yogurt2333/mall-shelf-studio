@@ -53,6 +53,8 @@ declare global {
         name: string;
         arrayBuffer: ArrayBuffer;
       }) => Promise<ProductImageImportResult>;
+      loadProjectState?: () => Promise<unknown | null>;
+      saveProjectState?: (projectState: unknown) => Promise<{ ok: true }>;
     };
   }
 }
